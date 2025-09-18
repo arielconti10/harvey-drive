@@ -25,7 +25,7 @@ export function VideoViewer({ file, onError }: VideoViewerProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">Video preview</p>
         <div className="flex items-center gap-2">
           <Button

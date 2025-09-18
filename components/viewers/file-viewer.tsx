@@ -183,7 +183,7 @@ export function FileViewer({
         showCloseButton={false}
         className="grid h-[92vh] w-[min(96vw,1100px)] grid-rows-[auto,1fr] gap-0 p-0 sm:max-w-none"
       >
-        <DialogHeader className="border-b border-border px-4 py-2 sm:p-6">
+        <DialogHeader className="border-b border-border px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 items-start gap-3">
               <div className="min-w-0 space-y-1">

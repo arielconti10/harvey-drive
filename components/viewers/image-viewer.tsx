@@ -49,7 +49,7 @@ export function ImageViewer({ file, onError }: ImageViewerProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Image Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
           Image preview
           {dimensions && (
