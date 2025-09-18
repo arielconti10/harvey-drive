@@ -3,13 +3,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Form,
   FormControl,
   FormField,
@@ -82,44 +75,51 @@ export default function SignUpPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen dark bg-background text-foreground flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <HardDrive className="h-12 w-12 text-foreground" />
-          </div>
-          <h1 className="text-3xl font-serif text-foreground">HarveyDrive</h1>
-          <p className="text-muted-foreground">Your files, everywhere</p>
-        </div>
+  const inputStyles = "border-white/15 bg-black/30 text-white placeholder:text-white/50 focus-visible:ring-white focus-visible:ring-offset-0";
 
-        <Card className="shadow-xl bg-card text-card-foreground">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">
+  return (
+    <div className="flex min-h-screen flex-col bg-[#0f0e0d] text-white">
+      <header className="px-6 py-6">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 text-sm text-white/70">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+              <HardDrive className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <span className="font-serif text-lg text-white">HarveyDrive</span>
+          </Link>
+          <Link href="/auth/login" className="text-sm text-white/60 hover:text-white">
+            Sign in
+          </Link>
+        </div>
+      </header>
+
+      <main className="flex flex-1 items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-10 text-center">
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.3em] text-white/50">
               Create account
-            </CardTitle>
-            <CardDescription className="text-center">
-              Get started with your personal cloud storage
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </p>
+            <h1 className="font-serif text-4xl text-white">Join HarveyDrive</h1>
+            <p className="text-sm text-white/60">
+              Unlock secure workspaces for your deals, clients, and internal teams.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-left text-white/80">
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(handleSignUp)}
-                className="space-y-4"
-                noValidate
-              >
+              <form onSubmit={form.handleSubmit(handleSignUp)} className="space-y-5" noValidate>
                 <FormField
                   control={form.control}
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel className="text-white/80">Full name</FormLabel>
                       <FormControl>
                         <Input
                           type="text"
                           autoComplete="name"
-                          placeholder="John Doe"
+                          placeholder="Harvey Counsel"
+                          className={inputStyles}
                           {...field}
                         />
                       </FormControl>
@@ -132,12 +132,13 @@ export default function SignUpPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="text-white/80">Email</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
                           autoComplete="email"
                           placeholder="you@example.com"
+                          className={inputStyles}
                           {...field}
                         />
                       </FormControl>
@@ -150,9 +151,14 @@ export default function SignUpPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel className="text-white/80">Password</FormLabel>
                       <FormControl>
-                        <Input type="password" autoComplete="new-password" {...field} />
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          className={inputStyles}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -163,11 +169,12 @@ export default function SignUpPage() {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
+                      <FormLabel className="text-white/80">Confirm password</FormLabel>
                       <FormControl>
                         <Input
                           type="password"
                           autoComplete="new-password"
+                          className={inputStyles}
                           {...field}
                         />
                       </FormControl>
@@ -176,31 +183,28 @@ export default function SignUpPage() {
                   )}
                 />
                 {form.formState.errors.root?.message ? (
-                  <div className="rounded-sm bg-red-50/80 p-3 text-sm text-destructive dark:bg-red-900/20">
+                  <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
                     {form.formState.errors.root.message}
                   </div>
                 ) : null}
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-white text-[#0f0e0d] hover:bg-white/90"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting ? "Creating account..." : "Create account"}
                 </Button>
               </form>
             </Form>
-            <div className="mt-6 text-center text-sm">
+            <div className="mt-6 text-center text-sm text-white/60">
               Already have an account?{" "}
-              <Link
-                href="/auth/login"
-                className="text-primary-foreground hover:opacity-90 font-medium"
-              >
+              <Link href="/auth/login" className="font-medium text-white hover:opacity-90">
                 Sign in
               </Link>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
