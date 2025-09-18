@@ -12,7 +12,6 @@ import {
 import {
   ChevronRight,
   ChevronDown,
-  Folder,
   MoreVertical,
   Download,
   Trash2,
@@ -22,7 +21,6 @@ import { formatFileSize, getFileIcon } from "@/lib/utils/file-utils";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { useUiStore } from "@/lib/store/ui";
-import Image from "next/image";
 
 interface FileTreeViewProps {
   files: FileItem[];
@@ -146,20 +144,9 @@ export function FileTreeView({
             checked={selectedItems.has(file.id)}
             onCheckedChange={(checked) => onItemSelect(file.id, !!checked)}
           />
-          {file.mime_type.startsWith("image/") ? (
-            <Image
-              src={file.blob_url || "/placeholder.svg"}
-              alt={file.name}
-              width={16}
-              height={16}
-              className="h-4 w-4 object-cover rounded"
-              unoptimized
-            />
-          ) : (
-            <span className="text-sm">
-              {getFileIcon(file.mime_type, file.name)}
-            </span>
-          )}
+          <span className="text-sm" aria-hidden="true">
+            {getFileIcon(file.mime_type, file.name)}
+          </span>
           <span className="flex-1 font-medium">{file.name}</span>
           <span className="text-xs text-gray-500">
             {formatFileSize(file.size)}
@@ -176,11 +163,11 @@ export function FileTreeView({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => handleDownload(file)}>
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4" />
                   Download
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onFileDelete(file.id)}>
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4" />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -255,7 +242,9 @@ export function FileTreeView({
             checked={selectedItems.has(folder.id)}
             onCheckedChange={(checked) => onItemSelect(folder.id, !!checked)}
           />
-          <Folder className="h-4 w-4" />
+          <span className="text-sm" aria-hidden="true">
+            📁
+          </span>
           <span
             className="flex-1 cursor-pointer font-medium"
             onClick={() => onFolderOpen(folder.id)}
@@ -274,7 +263,7 @@ export function FileTreeView({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => onFolderDelete(folder.id)}>
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-4 w-4" />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>

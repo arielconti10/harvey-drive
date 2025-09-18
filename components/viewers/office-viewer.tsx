@@ -92,7 +92,7 @@ export function OfficeViewer({ file, onError }: OfficeViewerProps) {
           onClick={() => window.open(file.blob_url, "_blank", "noopener,noreferrer")}
           variant="outline"
         >
-          <ExternalLink className="h-4 w-4 mr-2" />
+          <ExternalLink className="h-4 w-4" />
           Download to view
         </Button>
       </div>
@@ -119,7 +119,7 @@ export function OfficeViewer({ file, onError }: OfficeViewerProps) {
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
           <Button size="sm" variant="outline" onClick={handleOpenExternal}>
-            <ExternalLink className="h-4 w-4 mr-2" />
+            <ExternalLink className="h-4 w-4" />
             Open in Office Online
           </Button>
         </div>

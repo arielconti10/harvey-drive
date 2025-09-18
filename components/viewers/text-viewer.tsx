@@ -167,11 +167,11 @@ export function TextViewer({
             onClick={() => setWrapEnabled((prev) => !prev)}
             aria-pressed={wrapEnabled}
           >
-            <WrapText className="mr-2 h-4 w-4" />
+            <WrapText className="h-4 w-4" />
             {wrapEnabled ? "No Wrap" : "Wrap"}
           </Button>
           <Button size="sm" variant="outline" onClick={handleCopy}>
-            <Copy className="mr-2 h-4 w-4" />
+            <Copy className="h-4 w-4" />
             {copyStatus === "copied" ? "Copied" : "Copy"}
           </Button>
           <span className="sr-only" aria-live="polite" role="status">

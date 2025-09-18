@@ -75,8 +75,8 @@ export default function HomePage({
 
         <div className="mt-16 w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-white/5">
           <Image
-            src="/placeholder.jpg"
-            alt="HarveyDrive app preview"
+            src="/dashboard-screenshot.png"
+            alt="Screenshot of the HarveyDrive dashboard"
             width={1200}
             height={720}
             className="w-full object-cover"

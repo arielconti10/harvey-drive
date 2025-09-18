@@ -129,7 +129,7 @@ export function SharedFileViewer({
             <div className="flex flex-col sm:flex-row gap-3">
               {canPreview(file.mime_type, file.name) && (
                 <Button onClick={handlePreview} className="flex-1">
-                  <Eye className="h-4 w-4 mr-2" />
+                  <Eye className="h-4 w-4" />
                   Preview
                 </Button>
               )}
@@ -138,7 +138,7 @@ export function SharedFileViewer({
                 variant="outline"
                 className="flex-1 bg-transparent"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-4 w-4" />
                 Download
               </Button>
             </div>

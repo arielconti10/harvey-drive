@@ -297,7 +297,8 @@ export function DashboardSidebar({
             Create a dataroom to start organizing your files.
           </p>
           <Button onClick={handleCreateDataroom} className="w-full">
-            <Plus className="mr-2 h-4 w-4" /> Create dataroom
+            <Plus className="h-4 w-4" />
+            <span>Create dataroom</span>
           </Button>
         </div>
       )}
@@ -429,7 +430,7 @@ export function DashboardSidebar({
                     void handleSignOut();
                   }}
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="h-4 w-4" />
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>

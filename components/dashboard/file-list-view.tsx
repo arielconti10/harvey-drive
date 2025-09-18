@@ -35,7 +35,6 @@ import {
   getFileIcon,
   canPreview,
 } from "@/lib/utils/file-utils";
-import Image from "next/image";
 import { format } from "date-fns";
 
 interface FileListViewProps {
@@ -249,12 +248,13 @@ export function FileListView({
                       <DropdownMenuItem
                         onClick={() => startRename(folder.id, folder.name)}
                       >
+                        <Pencil className="h-4 w-4" />
                         Rename
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onFolderDelete(folder.id)}
                       >
-                        <Trash2 />
+                        <Trash2 className="h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -280,21 +280,9 @@ export function FileListView({
               />
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-start gap-3">
-                  {file.mime_type.startsWith("image/") ? (
-                    <div className="relative h-10 w-10 overflow-hidden rounded-md border border-border">
-                      <Image
-                        src={file.blob_url || "/placeholder.svg"}
-                        alt={file.name}
-                        fill
-                        sizes="40px"
-                        className="object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-xl" aria-hidden="true">
-                      {getFileIcon(file.mime_type, file.name)}
-                    </span>
-                  )}
+                  <span className="text-xl" aria-hidden="true">
+                    {getFileIcon(file.mime_type, file.name)}
+                  </span>
                   <div className="min-w-0 flex-1">
                     {renamingId === file.id ? (
                       <Input
@@ -333,24 +321,25 @@ export function FileListView({
                       <DropdownMenuItem
                         onClick={() => startRename(file.id, file.name)}
                       >
+                        <Pencil className="h-4 w-4" />
                         Rename
                       </DropdownMenuItem>
                       {canPreview(file.mime_type, file.name) && (
                         <DropdownMenuItem onClick={() => handlePreview(file)}>
-                          <Eye className="mr-2 h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                           Preview
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => handleDownload(file)}>
-                        <Download className="mr-2 h-4 w-4" />
+                        <Download className="h-4 w-4" />
                         Download
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onFileShare?.(file)}>
-                        <Share className="mr-2 h-4 w-4" />
+                        <Share className="h-4 w-4" />
                         Share
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onFileDelete(file.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -451,13 +440,13 @@ export function FileListView({
                         <DropdownMenuItem
                           onClick={() => startRename(folder.id, folder.name)}
                         >
-                          <Pencil />
+                          <Pencil className="h-4 w-4" />
                           Rename
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => onFolderDelete(folder.id)}
                         >
-                          <Trash2 />
+                          <Trash2 className="h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -485,21 +474,9 @@ export function FileListView({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-3">
-                      {file.mime_type.startsWith("image/") ? (
-                        <div className="relative h-5 w-5 overflow-hidden rounded">
-                          <Image
-                            src={file.blob_url || "/placeholder.svg"}
-                            alt={file.name}
-                            fill
-                            sizes="20px"
-                            className="object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-lg">
-                          {getFileIcon(file.mime_type, file.name)}
-                        </span>
-                      )}
+                      <span className="text-lg">
+                        {getFileIcon(file.mime_type, file.name)}
+                      </span>
                       {renamingId === file.id ? (
                         <Input
                           value={renameValue}
@@ -542,24 +519,25 @@ export function FileListView({
                         <DropdownMenuItem
                           onClick={() => startRename(file.id, file.name)}
                         >
+                          <Pencil className="h-4 w-4" />
                           Rename
                         </DropdownMenuItem>
                         {canPreview(file.mime_type, file.name) && (
                           <DropdownMenuItem onClick={() => handlePreview(file)}>
-                            <Eye className="mr-2 h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                             Preview
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => handleDownload(file)}>
-                          <Download className="mr-2 h-4 w-4" />
+                          <Download className="h-4 w-4" />
                           Download
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onFileShare?.(file)}>
-                          <Share className="mr-2 h-4 w-4" />
+                          <Share className="h-4 w-4" />
                           Share
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onFileDelete(file.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>

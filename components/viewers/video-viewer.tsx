@@ -34,7 +34,7 @@ export function VideoViewer({ file, onError }: VideoViewerProps) {
             onClick={() => setIsLooping((prev) => !prev)}
             aria-pressed={isLooping}
           >
-            <Repeat className="mr-2 h-4 w-4" />
+            <Repeat className="h-4 w-4" />
             {isLooping ? "Looping" : "Loop"}
           </Button>
           <Button
@@ -45,11 +45,12 @@ export function VideoViewer({ file, onError }: VideoViewerProps) {
           >
             {isMuted ? (
               <>
-                <VolumeX className="mr-2 h-4 w-4" /> Muted
+                <VolumeX className="h-4 w-4" />
+                Muted
               </>
             ) : (
               <>
-                <Volume2 className="mr-2 h-4 w-4" />
+                <Volume2 className="h-4 w-4" />
                 Mute
               </>
             )}

@@ -16,6 +16,7 @@ import {
   Trash2,
   Share,
   Eye,
+  Pencil,
 } from "lucide-react";
 import type { FileItem, FolderItem } from "@/lib/types";
 import {
@@ -27,7 +28,6 @@ import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import type { DragEvent } from "react";
-import Image from "next/image";
 import { toast } from "sonner";
 
 interface FileGridViewProps {
@@ -186,10 +186,11 @@ export function FileGridView({
                     <DropdownMenuItem
                       onClick={() => startRename(folder.id, folder.name)}
                     >
+                      <Pencil className="h-4 w-4" />
                       Rename
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onFolderDelete(folder.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -249,24 +250,25 @@ export function FileGridView({
                     <DropdownMenuItem
                       onClick={() => startRename(file.id, file.name)}
                     >
+                      <Pencil className="h-4 w-4" />
                       Rename
                     </DropdownMenuItem>
                     {canPreview(file.mime_type, file.name) && (
                       <DropdownMenuItem onClick={() => handlePreview(file)}>
-                        <Eye className="h-4 w-4 mr-2" />
+                        <Eye className="h-4 w-4" />
                         Preview
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => handleDownload(file)}>
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="h-4 w-4" />
                       Download
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onFileShare?.(file)}>
-                      <Share className="h-4 w-4 mr-2" />
+                      <Share className="h-4 w-4" />
                       Share
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onFileDelete(file.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -277,20 +279,9 @@ export function FileGridView({
                   canPreview(file.mime_type, file.name) && handlePreview(file)
                 }
               >
-                {file?.mime_type?.startsWith("image/") ? (
-                  <Image
-                    src={file.blob_url || "/placeholder.svg"}
-                    alt={file.name}
-                    width={48}
-                    height={48}
-                    className="h-12 w-12 mx-auto mb-2 object-cover rounded"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="h-12 w-12 mx-auto mb-2 flex items-center justify-center text-2xl">
-                    {getFileIcon(file.mime_type, file.name)}
-                  </div>
-                )}
+                <div className="h-12 w-12 mx-auto mb-2 flex items-center justify-center text-2xl">
+                  {getFileIcon(file.mime_type, file.name)}
+                </div>
                 {renamingId === file.id ? (
                   <Input
                     value={renameValue}

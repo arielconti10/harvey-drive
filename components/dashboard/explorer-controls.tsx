@@ -253,14 +253,14 @@ export function ExplorerControls({
                 disabled={!canCreate}
                 onClick={() => canCreate && fileInputRef.current?.click()}
               >
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="h-4 w-4" />
                 Upload Files
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={!canCreate}
                 onClick={() => canCreate && onShowUploadZone()}
               >
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="h-4 w-4" />
                 Open Upload Zone
               </DropdownMenuItem>
 
@@ -268,7 +268,7 @@ export function ExplorerControls({
                 disabled={!canCreate}
                 onClick={() => canCreate && setCreateFolderOpen(true)}
               >
-                <FolderPlus className="h-4 w-4 mr-2" />
+                <FolderPlus className="h-4 w-4" />
                 New Folder
               </DropdownMenuItem>
             </DropdownMenuContent>

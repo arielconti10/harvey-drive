@@ -207,11 +207,11 @@ export function FileViewer({
 
             <div className="flex shrink-0 items-center gap-2">
               <Button size="sm" variant="outline" onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="h-4 w-4" />
                 Download
               </Button>
               <Button size="sm" variant="outline" onClick={handleOpenExternal}>
-                <ExternalLink className="mr-2 h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
                 Open
               </Button>
               <Button
@@ -236,11 +236,11 @@ export function FileViewer({
               </p>
               <div className="flex items-center gap-2">
                 <Button onClick={handleDownload}>
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className="h-4 w-4" />
                   Download
                 </Button>
                 <Button variant="outline" onClick={handleOpenExternal}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
+                  <ExternalLink className="h-4 w-4" />
                   Open in new tab
                 </Button>
               </div>
@@ -258,11 +258,11 @@ export function FileViewer({
               </div>
               <div className="flex items-center gap-2">
                 <Button onClick={handleRetry}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                   Retry preview
                 </Button>
                 <Button variant="outline" onClick={handleOpenExternal}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
+                  <ExternalLink className="h-4 w-4" />
                   Open original
                 </Button>
               </div>
