@@ -12,6 +12,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -222,6 +223,9 @@ export function ExplorerControls({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Folder</DialogTitle>
+            <DialogDescription>
+              Name the folder you want to add to the current location.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

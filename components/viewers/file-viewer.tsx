@@ -16,9 +16,7 @@ import type { FileItem } from "@/lib/types";
 import {
   formatFileSize,
   getFileCategory,
-  getFileIcon,
   getFileViewerType,
-  getFileExtension,
 } from "@/lib/utils/file-utils";
 import { FILE_TYPE_GROUPS } from "@/lib/constants/files";
 import type { FileViewerType } from "@/lib/utils/file-utils";
@@ -135,9 +133,7 @@ export function FileViewer({
   }, [file]);
 
   const categoryLabel = categoryLabels.get(category) ?? "File";
-  const icon = file ? getFileIcon(file.mime_type, file.name) : "📁";
   const sizeLabel = file ? formatFileSize(file.size) : "";
-  const extension = file ? getFileExtension(file.name) : "";
 
   const handleDownload = useCallback(() => {
     if (!file) return;

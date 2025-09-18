@@ -33,7 +33,7 @@ import type { User } from "@supabase/supabase-js";
 import type { Profile, Dataroom } from "@/lib/types";
 import { useDatarooms } from "@/lib/hooks/use-datarooms";
 import { useUiStore } from "@/lib/store/ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { DataroomNameDialog } from "./dataroom-name-dialog";
@@ -82,6 +82,7 @@ export function DashboardSidebar({
   const [roomToRename, setRoomToRename] = useState<Dataroom | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<Dataroom | null>(null);
+  const hasLoadedRoomsRef = useRef(false);
 
   useEffect(() => {
     if (!currentDataroomId && sortedRooms.length > 0) {
@@ -114,7 +115,12 @@ export function DashboardSidebar({
       return;
     }
 
-    if (sortedRooms.length === 0 && !showCreateDialog) {
+    if (sortedRooms.length > 0) {
+      hasLoadedRoomsRef.current = true;
+      return;
+    }
+
+    if (!hasLoadedRoomsRef.current && !showCreateDialog) {
       setShowCreateDialog(true);
     }
   }, [loading, sortedRooms, showCreateDialog]);
