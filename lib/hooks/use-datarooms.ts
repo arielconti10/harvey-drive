@@ -34,7 +34,11 @@ export function useDatarooms(initialData?: Dataroom[]) {
       }
       return (await res.json()) as Dataroom;
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
+      qc.setQueryData<Dataroom[]>(["datarooms"], (previous = []) => {
+        const exists = previous.some((room) => room.id === created.id);
+        return exists ? previous : [...previous, created];
+      });
       qc.invalidateQueries({ queryKey: ["datarooms"] });
     },
   });

@@ -1,8 +1,34 @@
 import { Button } from "@/components/ui/button";
 import { HardDrive } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default function HomePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const code = searchParams.code;
+
+  if (code) {
+    const params = new URLSearchParams();
+
+    Object.entries(searchParams).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((entry) => params.append(key, entry));
+      } else if (value !== undefined) {
+        params.set(key, value);
+      }
+    });
+
+    const next = params.get("next") ?? "/dashboard";
+    params.set("next", next);
+
+    redirect(`/auth/callback?${params.toString()}`);
+  }
+
   return (
     <div className="min-h-screen flex flex-col dark bg-background text-foreground">
       {/* Header */}
