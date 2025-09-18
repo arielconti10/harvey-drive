@@ -147,8 +147,11 @@ export function ExplorerControls({
   };
 
   const sortDescription = sortBy
-    ? `${sortLabels[sortBy]} · ${sortOrder === "asc" ? "Asc" : "Desc"}`
+    ? `${sortLabels[sortBy] ?? sortBy} · ${sortOrder === "asc" ? "Asc" : "Desc"}`
     : null;
+
+  const defaultSortLabel = sortLabels[defaultSortBy] ?? defaultSortBy ?? "Name";
+  const defaultSortDirection = defaultSortOrder === "desc" ? "Desc" : "Asc";
 
   const viewLabels: Record<ViewMode, string> = {
     grid: "Grid",
@@ -210,11 +213,8 @@ export function ExplorerControls({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 {sortOrder === "asc" ? <SortAsc /> : <SortDesc />}
-                <span className="hidden sm:inline">
-                  Sort{sortDescription ? `: ${sortDescription}` : ""}
-                </span>
-                <span className="sr-only sm:hidden">
-                  {sortDescription ? `Sort: ${sortDescription}` : "Sort options"}
+                <span className="ml-1">
+                  Sort: {sortDescription ?? `${defaultSortLabel} · ${defaultSortDirection}`}
                 </span>
               </Button>
             </DropdownMenuTrigger>

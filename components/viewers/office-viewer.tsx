@@ -102,7 +102,7 @@ export function OfficeViewer({ file, onError }: OfficeViewerProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Office Viewer Controls */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center space-x-2">
           <span className="text-sm text-muted-foreground">
             Office Online Viewer

@@ -8,14 +8,24 @@ interface AudioViewerProps {
 }
 
 export function AudioViewer({ file, onError }: AudioViewerProps) {
+  const mimeLabel = file.mime_type?.split(";")[0] ?? null;
+
   return (
     <div className="flex h-full flex-col bg-secondary">
-      <div className="flex flex-1 items-center justify-center p-6">
-        <div className="w-full max-w-3xl rounded-lg border border-border bg-card p-6 shadow-sm">
-          <div className="flex flex-col gap-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Audio preview
-            </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          Audio preview
+        </p>
+        {mimeLabel && (
+          <span className="text-xs text-muted-foreground" title={mimeLabel}>
+            {mimeLabel}
+          </span>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-auto">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5">
+          <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
             <audio
               className="w-full"
               controls

@@ -130,6 +130,12 @@ export function AdobeRasterViewer({ file, onError }: AdobeRasterViewerProps) {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-secondary">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          {extensionLabel} preview
+        </p>
+      </div>
+
       <div className="flex-1 overflow-auto p-4">
         <div className="flex min-h-full min-w-full items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}

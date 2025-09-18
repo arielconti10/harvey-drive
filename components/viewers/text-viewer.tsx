@@ -146,7 +146,7 @@ export function TextViewer({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="space-y-0.5">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {languageLabel}
