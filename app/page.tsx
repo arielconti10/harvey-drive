@@ -61,11 +61,12 @@ export default function HomePage({
             Secure intelligence for modern deal teams
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-white/70">
-            Keep your files safe, share with your team, stay in control
+            Purpose-built automation that keeps every dataroom organised, every
+            policy enforced, and every client response on-brand.
           </p>
           <div>
             <Link href="/auth/signup" className="inline-flex">
-              <Button className="bg-white px-10 py-6 text-base font-medium hover:bg-white/90">
+              <Button className="bg-white px-10 py-6 text-base font-medium text-[#0f0e0d] hover:bg-white/90">
                 Sign up
               </Button>
             </Link>
@@ -90,7 +91,7 @@ export default function HomePage({
             &copy; {new Date().getFullYear()} HarveyDrive. Built for the
             Harvey.ai technical challenge.
           </p>
-          <p>Security-first data rooms, now with AI.</p>
+          <p>Security-first data rooms, built for modern deal teams.</p>
         </div>
       </footer>
     </div>
