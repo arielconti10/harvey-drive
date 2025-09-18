@@ -17,6 +17,7 @@ import {
   Share,
   Eye,
   Pencil,
+  Star,
 } from "lucide-react";
 import type { FileItem, FolderItem } from "@/lib/types";
 import {
@@ -24,6 +25,7 @@ import {
   getFileIcon,
   canPreview,
 } from "@/lib/utils/file-utils";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -45,6 +47,7 @@ interface FileGridViewProps {
   onRenameFile?: (id: string, name: string) => Promise<FileItem>;
   onRenameFolder?: (id: string, name: string) => Promise<FolderItem>;
   onFileShare?: (file: FileItem) => void;
+  onFileStarToggle?: (fileId: string, starred: boolean) => Promise<void> | void;
   onFileMove?: (
     fileId: string,
     targetFolderId: string | null
@@ -64,6 +67,7 @@ export function FileGridView({
   onRenameFile,
   onRenameFolder,
   onFileShare,
+  onFileStarToggle,
   onFileMove,
 }: FileGridViewProps) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -140,9 +144,9 @@ export function FileGridView({
   };
 
   const handlePreview = (file: FileItem) => {
-    if (onFilePreview) {
-      onFilePreview(file);
-    }
+    if (!onFilePreview) return;
+    if (renamingId === file.id) return;
+    onFilePreview(file);
   };
 
   return (
@@ -259,6 +263,23 @@ export function FileGridView({
                         Preview
                       </DropdownMenuItem>
                     )}
+                    {onFileStarToggle && (
+                      <DropdownMenuItem
+                        onClick={() =>
+                          onFileStarToggle(file.id, !file.is_starred)
+                        }
+                      >
+                        <Star
+                          className={cn(
+                            "h-4 w-4",
+                            file.is_starred
+                              ? "fill-amber-500 text-amber-500"
+                              : "text-muted-foreground"
+                          )}
+                        />
+                        {file.is_starred ? "Remove star" : "Add star"}
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => handleDownload(file)}>
                       <Download className="h-4 w-4" />
                       Download
@@ -286,6 +307,8 @@ export function FileGridView({
                   <Input
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
+                    onClick={(event) => event.stopPropagation()}
+                    onDoubleClick={(event) => event.stopPropagation()}
                     onBlur={() => submitRename(file.id, "file")}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") submitRename(file.id, "file");
@@ -295,8 +318,16 @@ export function FileGridView({
                     className="h-7"
                   />
                 ) : (
-                  <p className="text-sm font-medium truncate" title={file.name}>
-                    {file.name}
+                  <p
+                    className="text-sm font-medium truncate"
+                    title={file.name}
+                  >
+                    <span className="flex items-center justify-center gap-1">
+                      <span className="truncate">{file.name}</span>
+                      {file.is_starred && (
+                        <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
+                      )}
+                    </span>
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">

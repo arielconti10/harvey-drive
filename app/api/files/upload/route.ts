@@ -137,7 +137,9 @@ export async function POST(request: NextRequest) {
       mime_type: fileData.mime_type,
       blob_url: fileData.blob_url,
       folder_id: fileData.folder_id,
+      dataroom_id: fileData.dataroom_id,
       is_public: fileData.is_public,
+      is_starred: fileData.is_starred,
       created_at: fileData.created_at,
       updated_at: fileData.updated_at,
     });

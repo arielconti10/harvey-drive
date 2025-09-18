@@ -2,52 +2,87 @@
 
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { FileItem, FolderItem } from "@/lib/types";
+import type { DashboardView, FileItem, FolderItem } from "@/lib/types";
 
-export function useFiles(
-  folderId?: string | null,
-  dataroomId?: string | null,
-  searchQuery?: string
-) {
+interface UseFilesParams {
+  folderId?: string | null;
+  dataroomId?: string | null;
+  searchQuery?: string;
+  view?: DashboardView;
+}
+
+export function useFiles({
+  folderId,
+  dataroomId,
+  searchQuery,
+  view = "files",
+}: UseFilesParams) {
   const normalizedSearch = searchQuery?.trim() ?? "";
   const queryClient = useQueryClient();
+  const effectiveFolderId = view === "files" ? folderId : null;
 
   const filesKey = useMemo(
     () => [
       "files",
       {
-        folderId: folderId || null,
+        folderId: effectiveFolderId || null,
         dataroomId: dataroomId || null,
         search: normalizedSearch,
+        view,
       },
     ],
-    [folderId, dataroomId, normalizedSearch]
+    [effectiveFolderId, dataroomId, normalizedSearch, view]
   );
   const foldersKey = useMemo(
     () => [
       "folders",
-      { parentId: folderId || null, dataroomId: dataroomId || null },
+      {
+        parentId: effectiveFolderId || null,
+        dataroomId: dataroomId || null,
+        view,
+      },
     ],
-    [folderId, dataroomId]
+    [effectiveFolderId, dataroomId, view]
   );
 
   const fetchFilesList = async (): Promise<FileItem[]> => {
+    if (view === "shared" || view === "trash") {
+      return [];
+    }
     const params = new URLSearchParams();
-    if (folderId) params.append("folderId", folderId);
-    if (dataroomId) params.append("dataroomId", dataroomId);
+    if (view === "starred") {
+      params.append("view", "starred");
+    } else if (effectiveFolderId) {
+      params.append("folderId", effectiveFolderId);
+    }
+    if (dataroomId && view !== "starred") {
+      params.append("dataroomId", dataroomId);
+    }
     if (normalizedSearch) params.append("search", normalizedSearch);
-    const res = await fetch(`/api/files/list?${params}`);
+    const queryString = params.toString();
+    const res = await fetch(
+      queryString ? `/api/files/list?${queryString}` : "/api/files/list"
+    );
     if (!res.ok) throw new Error("Failed to fetch files");
     const data = await res.json();
     return data.files || [];
   };
 
   const fetchFoldersList = async (): Promise<FolderItem[]> => {
-    const url = folderId
-      ? `/api/folders/list?parentId=${folderId}${
-          dataroomId ? `&dataroomId=${dataroomId}` : ""
-        }`
-      : `/api/folders/list${dataroomId ? `?dataroomId=${dataroomId}` : ""}`;
+    if (view !== "files") {
+      return [];
+    }
+    const searchParams = new URLSearchParams();
+    if (effectiveFolderId) {
+      searchParams.append("parentId", effectiveFolderId);
+    }
+    if (dataroomId) {
+      searchParams.append("dataroomId", dataroomId);
+    }
+    const queryString = searchParams.toString();
+    const url = queryString
+      ? `/api/folders/list?${queryString}`
+      : "/api/folders/list";
     const res = await fetch(url);
     if (!res.ok) throw new Error("Failed to fetch folders");
     const data = await res.json();
@@ -66,6 +101,7 @@ export function useFiles(
     queryFn: fetchFoldersList,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    enabled: view === "files",
   });
 
   const uploadFileMutation = useMutation({
@@ -147,6 +183,38 @@ export function useFiles(
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: filesKey });
+    },
+  });
+
+  const toggleStarMutation = useMutation({
+    mutationFn: async ({
+      fileId,
+      starred,
+    }: {
+      fileId: string;
+      starred: boolean;
+    }) => {
+      const response = await fetch("/api/files/star", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId, starred }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update star");
+      }
+      const payload = (await response.json()) as { file: FileItem };
+      return payload.file;
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<FileItem[] | undefined>(filesKey, (prev) =>
+        prev ? prev.map((f) => (f.id === updated.id ? updated : f)) : prev
+      );
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Failed to update star";
+      console.error(message);
     },
   });
 
@@ -290,6 +358,8 @@ export function useFiles(
       renameFileMutation.mutateAsync({ fileId, name }),
     renameFolder: (folderId: string, name: string) =>
       renameFolderMutation.mutateAsync({ folderId, name }),
+    toggleStar: (fileId: string, starred: boolean) =>
+      toggleStarMutation.mutateAsync({ fileId, starred }),
     moveFile: (fileId: string, targetFolderId: string | null) =>
       moveFileMutation.mutateAsync({ fileId, targetFolderId }),
   };

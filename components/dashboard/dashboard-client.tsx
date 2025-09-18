@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { FileItem } from "@/lib/types";
+import type { DashboardView, FileItem } from "@/lib/types";
 import { DashboardHeader } from "./dashboard-header";
 import { FileExplorer } from "./file-explorer";
 import { FileUploadZone } from "./file-upload-zone";
@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { ExplorerControls } from "./explorer-controls";
 import { Progress } from "@/components/ui/progress";
 
-export function DashboardClient() {
+export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
   const currentFolderId = useUiStore((s) => s.currentFolderId);
   const currentDataroomId = useUiStore((s) => s.currentDataroomId);
   const setCurrentFolderId = useUiStore((s) => s.setCurrentFolderId);
@@ -97,6 +97,18 @@ export function DashboardClient() {
     };
   }, []);
 
+  const resetStateForView = useCallback(() => {
+    clearSelection();
+    if (view !== "files") {
+      setCurrentFolderId(null);
+      setShowUploadZone(false);
+    }
+  }, [clearSelection, setCurrentFolderId, setShowUploadZone, view]);
+
+  useEffect(() => {
+    resetStateForView();
+  }, [resetStateForView]);
+
   const {
     files,
     folders,
@@ -109,8 +121,14 @@ export function DashboardClient() {
     deleteFolder,
     renameFile,
     renameFolder,
+    toggleStar,
     moveFile,
-  } = useFiles(currentFolderId, currentDataroomId, searchFilters.query);
+  } = useFiles({
+    folderId: view === "files" ? currentFolderId : null,
+    dataroomId: currentDataroomId,
+    searchQuery: searchFilters.query,
+    view,
+  });
 
   const {
     downloads,
@@ -121,6 +139,7 @@ export function DashboardClient() {
   } = useDownloadManager();
 
   const handleFolderNavigate = (folderId: string | null) => {
+    if (view !== "files") return;
     setCurrentFolderId(folderId);
     clearSelection();
   };
@@ -136,6 +155,7 @@ export function DashboardClient() {
   };
 
   const handleExplorerUpload = async (files: FileList) => {
+    if (view !== "files") return;
     try {
       const fileArray = Array.from(files);
       if (fileArray.length === 0) return;
@@ -182,7 +202,17 @@ export function DashboardClient() {
     }
   };
 
-  const canCreate = Boolean(currentDataroomId);
+  const handleToggleStar = async (fileId: string, starred: boolean) => {
+    try {
+      await toggleStar(fileId, starred);
+      toast.success(starred ? "Added to starred" : "Removed from starred");
+    } catch (error) {
+      console.error("Toggle star failed:", error);
+      toast.error((error as Error)?.message || "Update failed");
+    }
+  };
+
+  const canCreate = view === "files" && Boolean(currentDataroomId);
 
   const handleItemSelect = (itemId: string, selected: boolean) => {
     const newSelection = new Set(selectedItems);
@@ -355,6 +385,7 @@ export function DashboardClient() {
           onRefresh={refetch}
           onRenameFile={(id, name) => renameFile(id, name)}
           onRenameFolder={(id, name) => renameFolder(id, name)}
+          onFileStarToggle={handleToggleStar}
           onUpload={handleExplorerUpload}
           onCreateFolder={handleCreateFolder}
           onFileMove={handleMoveFile}

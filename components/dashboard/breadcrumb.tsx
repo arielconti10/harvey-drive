@@ -26,6 +26,12 @@ interface BreadcrumbItem {
   name: string;
 }
 
+const SPECIAL_VIEWS: Record<string, string> = {
+  starred: "Starred",
+  shared: "Shared",
+  trash: "Trash",
+};
+
 export function Breadcrumb({
   currentFolderId,
   onNavigate,
@@ -44,6 +50,17 @@ export function Breadcrumb({
       if (!currentFolderId) {
         if (isActive) {
           setBreadcrumbs([{ id: null, name: "My Files" }]);
+        }
+        return;
+      }
+
+      const specialLabel = SPECIAL_VIEWS[currentFolderId];
+      if (specialLabel) {
+        if (isActive) {
+          setBreadcrumbs([
+            { id: null, name: "My Files" },
+            { id: currentFolderId, name: specialLabel },
+          ]);
         }
         return;
       }

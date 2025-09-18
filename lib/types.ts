@@ -8,6 +8,7 @@ export interface FileItem {
   folder_id: string | null;
   dataroom_id?: string;
   is_public: boolean;
+  is_starred: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +54,8 @@ export type ViewMode = "grid" | "list" | "tree";
 
 export type SortBy = "name" | "size" | "date" | "type";
 export type SortOrder = "asc" | "desc";
+
+export type DashboardView = "files" | "starred" | "shared" | "trash";
 
 export interface SearchFilters {
   query: string;

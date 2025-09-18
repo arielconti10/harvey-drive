@@ -28,6 +28,7 @@ import {
   Share,
   Eye,
   Pencil,
+  Star,
 } from "lucide-react";
 import type { FileItem, FolderItem } from "@/lib/types";
 import {
@@ -35,6 +36,7 @@ import {
   getFileIcon,
   canPreview,
 } from "@/lib/utils/file-utils";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 interface FileListViewProps {
@@ -52,6 +54,7 @@ interface FileListViewProps {
   onFileDownload?: (file: FileItem) => void;
   onFilePreview?: (file: FileItem) => void;
   onFileShare?: (file: FileItem) => void;
+  onFileStarToggle?: (fileId: string, starred: boolean) => Promise<void> | void;
   onFileMove?: (
     fileId: string,
     targetFolderId: string | null
@@ -73,6 +76,7 @@ export function FileListView({
   onFileDownload,
   onFileShare,
   onFilePreview,
+  onFileStarToggle,
   onFileMove,
 }: FileListViewProps) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -163,6 +167,7 @@ export function FileListView({
 
   const handlePreview = (file: FileItem) => {
     if (!onFilePreview || !canPreview(file.mime_type, file.name)) return;
+    if (renamingId === file.id) return;
     onFilePreview(file);
   };
 
@@ -299,8 +304,14 @@ export function FileListView({
                         className="h-8"
                       />
                     ) : (
-                      <p className="truncate font-medium" title={file.name}>
-                        {file.name}
+                      <p
+                        className="flex items-center gap-1 truncate font-medium"
+                        title={file.name}
+                      >
+                        <span className="truncate">{file.name}</span>
+                        {file.is_starred && (
+                          <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
+                        )}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
@@ -328,6 +339,23 @@ export function FileListView({
                         <DropdownMenuItem onClick={() => handlePreview(file)}>
                           <Eye className="h-4 w-4" />
                           Preview
+                        </DropdownMenuItem>
+                      )}
+                      {onFileStarToggle && (
+                        <DropdownMenuItem
+                          onClick={() =>
+                            onFileStarToggle(file.id, !file.is_starred)
+                          }
+                        >
+                          <Star
+                            className={cn(
+                              "h-4 w-4",
+                              file.is_starred
+                                ? "fill-amber-500 text-amber-500"
+                                : "text-muted-foreground"
+                            )}
+                          />
+                          {file.is_starred ? "Remove star" : "Add star"}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => handleDownload(file)}>
@@ -398,15 +426,17 @@ export function FileListView({
                     <div className="flex items-center space-x-3">
                       <Folder className="h-5 w-5 text-foreground" />
                       {renamingId === folder.id ? (
-                        <Input
-                          value={renameValue}
-                          onChange={(event) =>
-                            setRenameValue(event.target.value)
-                          }
-                          onBlur={() => submitRename(folder.id, "folder")}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter")
-                              submitRename(folder.id, "folder");
+                      <Input
+                        value={renameValue}
+                        onChange={(event) =>
+                          setRenameValue(event.target.value)
+                        }
+                        onClick={(event) => event.stopPropagation()}
+                        onDoubleClick={(event) => event.stopPropagation()}
+                        onBlur={() => submitRename(folder.id, "folder")}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter")
+                            submitRename(folder.id, "folder");
                             if (event.key === "Escape") setRenamingId(null);
                           }}
                           autoFocus
@@ -478,15 +508,17 @@ export function FileListView({
                         {getFileIcon(file.mime_type, file.name)}
                       </span>
                       {renamingId === file.id ? (
-                        <Input
-                          value={renameValue}
-                          onChange={(event) =>
-                            setRenameValue(event.target.value)
-                          }
-                          onBlur={() => submitRename(file.id, "file")}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter")
-                              submitRename(file.id, "file");
+                      <Input
+                        value={renameValue}
+                        onChange={(event) =>
+                          setRenameValue(event.target.value)
+                        }
+                        onClick={(event) => event.stopPropagation()}
+                        onDoubleClick={(event) => event.stopPropagation()}
+                        onBlur={() => submitRename(file.id, "file")}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter")
+                            submitRename(file.id, "file");
                             if (event.key === "Escape") setRenamingId(null);
                           }}
                           autoFocus
@@ -494,10 +526,13 @@ export function FileListView({
                         />
                       ) : (
                         <span
-                          className="truncate font-medium"
+                          className="flex items-center gap-1 truncate font-medium"
                           title={file.name}
                         >
-                          {file.name}
+                          <span className="truncate">{file.name}</span>
+                          {file.is_starred && (
+                            <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
+                          )}
                         </span>
                       )}
                     </div>
@@ -526,6 +561,23 @@ export function FileListView({
                           <DropdownMenuItem onClick={() => handlePreview(file)}>
                             <Eye className="h-4 w-4" />
                             Preview
+                          </DropdownMenuItem>
+                        )}
+                        {onFileStarToggle && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              onFileStarToggle(file.id, !file.is_starred)
+                            }
+                          >
+                            <Star
+                              className={cn(
+                                "h-4 w-4",
+                                file.is_starred
+                                  ? "fill-amber-500 text-amber-500"
+                                  : "text-muted-foreground"
+                              )}
+                            />
+                            {file.is_starred ? "Remove star" : "Add star"}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => handleDownload(file)}>

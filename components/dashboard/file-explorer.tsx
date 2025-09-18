@@ -39,6 +39,7 @@ interface FileExplorerProps {
   onRefresh: () => void;
   onRenameFile?: (id: string, name: string) => Promise<FileItem>;
   onRenameFolder?: (id: string, name: string) => Promise<FolderItem>;
+  onFileStarToggle?: (fileId: string, starred: boolean) => Promise<void> | void;
   onFileMove?: (
     fileId: string,
     targetFolderId: string | null
@@ -70,6 +71,7 @@ export function FileExplorer({
   onRefresh,
   onRenameFile,
   onRenameFolder,
+  onFileStarToggle,
   onFileMove,
   onUpload,
   onCreateFolder,
@@ -302,6 +304,7 @@ export function FileExplorer({
         onRefresh,
         onRenameFile,
         onRenameFolder,
+        onFileStarToggle,
         onFileMove,
       };
 

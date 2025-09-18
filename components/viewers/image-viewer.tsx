@@ -2,7 +2,8 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ZoomIn, ZoomOut, RotateCw, Maximize2, RefreshCw } from "lucide-react";
@@ -18,15 +19,56 @@ export function ImageViewer({ file, onError }: ImageViewerProps) {
   const [rotation, setRotation] = useState(0);
   const [fitMode, setFitMode] = useState<"contain" | "actual">("contain");
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragState = useRef({
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+    pointerId: 0,
+  });
+
+  const resetOffset = () => setOffset({ x: 0, y: 0 });
 
   const handleZoomIn = () => {
+    const wasContain = fitMode === "contain";
     setFitMode("actual");
-    setScale((prev) => Math.min(prev + 0.25, 5));
+    setScale((prev) => {
+      const base = wasContain ? 1 : prev;
+      const next = Math.min(base + 0.25, 5);
+      if (wasContain) {
+        resetOffset();
+        return next;
+      }
+      if (prev === 0) return next;
+      const ratio = next / prev;
+      setOffset((current) => ({
+        x: current.x * ratio,
+        y: current.y * ratio,
+      }));
+      return next;
+    });
   };
 
   const handleZoomOut = () => {
+    const wasContain = fitMode === "contain";
     setFitMode("actual");
-    setScale((prev) => Math.max(prev - 0.25, 0.25));
+    setScale((prev) => {
+      const base = wasContain ? 1 : prev;
+      const next = Math.max(base - 0.25, 0.25);
+      if (wasContain) {
+        resetOffset();
+        return next;
+      }
+      if (prev === 0) return next;
+      const ratio = next / prev;
+      setOffset((current) => ({
+        x: current.x * ratio,
+        y: current.y * ratio,
+      }));
+      return next;
+    });
   };
 
   const handleRotate = () => setRotation((prev) => (prev + 90) % 360);
@@ -35,16 +77,49 @@ export function ImageViewer({ file, onError }: ImageViewerProps) {
     setFitMode("contain");
     setScale(1);
     setRotation(0);
+    resetOffset();
   };
 
   const handleReset = () => {
     setScale(1);
     setRotation(0);
     setFitMode("contain");
+    resetOffset();
   };
 
   const effectiveScale = fitMode === "contain" ? 1 : scale;
   const zoomDisplay = Math.round(effectiveScale * 100);
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (fitMode !== "actual" || event.button !== 0) return;
+    event.preventDefault();
+    const pointerId = event.pointerId;
+    event.currentTarget.setPointerCapture(pointerId);
+    dragState.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: offset.x,
+      originY: offset.y,
+      pointerId,
+    };
+    setIsDragging(true);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || fitMode !== "actual") return;
+    const { startX, startY, originX, originY } = dragState.current;
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+    setOffset({ x: originX + deltaX, y: originY + deltaY });
+  };
+
+  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    if (event.pointerId === dragState.current.pointerId) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setIsDragging(false);
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -107,16 +182,18 @@ export function ImageViewer({ file, onError }: ImageViewerProps) {
       <div className="flex-1 overflow-hidden bg-secondary">
         <div
           className={cn(
-            "size-full overflow-auto",
-            fitMode === "actual" && "cursor-grab active:cursor-grabbing"
+            "size-full overflow-hidden",
+            fitMode === "actual" && (isDragging ? "cursor-grabbing" : "cursor-grab")
           )}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onPointerLeave={endDrag}
         >
           <div
             className={cn(
-              "flex min-h-full min-w-full p-4",
-              fitMode === "contain"
-                ? "items-center justify-center"
-                : "items-start justify-start"
+              "flex min-h-full min-w-full items-center justify-center p-4"
             )}
           >
             <img
@@ -132,7 +209,8 @@ export function ImageViewer({ file, onError }: ImageViewerProps) {
                   : "max-h-none max-w-none"
               )}
               style={{
-                transform: `scale(${effectiveScale}) rotate(${rotation}deg)`,
+                transform: `translate(${offset.x}px, ${offset.y}px) scale(${effectiveScale}) rotate(${rotation}deg)`,
+                transformOrigin: "center",
               }}
               width={
                 fitMode === "contain"

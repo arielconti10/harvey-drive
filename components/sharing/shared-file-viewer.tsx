@@ -31,8 +31,6 @@ export function SharedFileViewer({
     try {
       const anchor = document.createElement("a");
       anchor.href = file.blob_url;
-      anchor.target = "_blank";
-      anchor.rel = "noreferrer";
       anchor.download = file.name;
       document.body.appendChild(anchor);
       anchor.click();

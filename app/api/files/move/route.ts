@@ -78,7 +78,7 @@ export async function PATCH(request: NextRequest) {
       .eq("id", fileId)
       .eq("owner_id", user.id)
       .select(
-        "id,name,size,mime_type,folder_id,dataroom_id,blob_url,created_at,updated_at"
+        "id,name,size,mime_type,folder_id,dataroom_id,blob_url,is_public,is_starred,created_at,updated_at"
       )
       .single();
 

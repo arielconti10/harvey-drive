@@ -30,7 +30,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import type { Profile, Dataroom } from "@/lib/types";
+import type { DashboardView, Profile, Dataroom } from "@/lib/types";
 import { useDatarooms } from "@/lib/hooks/use-datarooms";
 import { useUiStore } from "@/lib/store/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -51,15 +51,15 @@ import {
 interface DashboardSidebarProps {
   user: User;
   profile: Profile | null;
-  onNavigate: (folderId: string | null) => void;
-  currentFolderId: string | null;
+  onNavigate: (view: DashboardView) => void;
+  currentView: DashboardView;
 }
 
 export function DashboardSidebar({
   user,
   profile,
   onNavigate,
-  currentFolderId,
+  currentView,
 }: DashboardSidebarProps) {
   const router = useRouter();
   const { isMobile } = useSidebar();
@@ -170,17 +170,33 @@ export function DashboardSidebar({
     router.push("/");
   };
 
-  const sidebarItems = [
-    {
-      icon: Home,
-      label: "My Files",
-      id: null,
-      active: currentFolderId === null,
-    },
-    { icon: Star, label: "Starred", id: "starred", active: false },
-    { icon: Share2, label: "Shared", id: "shared", active: false },
-    { icon: Trash2, label: "Trash", id: "trash", active: false },
-  ];
+  const sidebarItems = (
+    [
+      {
+        icon: Home,
+        label: "My Files",
+        view: "files" as const,
+      },
+      {
+        icon: Star,
+        label: "Starred",
+        view: "starred" as const,
+      },
+      {
+        icon: Share2,
+        label: "Shared",
+        view: "shared" as const,
+      },
+      {
+        icon: Trash2,
+        label: "Trash",
+        view: "trash" as const,
+      },
+    ]
+  ).map((item) => ({
+    ...item,
+    active: currentView === item.view,
+  }));
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -368,10 +384,10 @@ export function DashboardSidebar({
       <nav className="flex-1 px-4 py-6 space-y-2">
         {sidebarItems.map((item) => (
           <Button
-            key={item.id || "root"}
+            key={item.view}
             variant={item.active ? "secondary" : "ghost"}
             className="w-full justify-start"
-            onClick={() => onNavigate(item.id)}
+            onClick={() => onNavigate(item.view)}
           >
             <item.icon className="h-4 w-4 mr-3" />
             {item.label}
