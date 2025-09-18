@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 interface DataroomNameDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -22,6 +33,10 @@ interface DataroomNameDialogProps {
   autoFocus?: boolean;
 }
 
+const dataroomNameSchema = z.object({
+  name: z.string().trim().min(1, "Please enter a name"),
+});
+
 export function DataroomNameDialog({
   open,
   onOpenChange,
@@ -32,78 +47,84 @@ export function DataroomNameDialog({
   initialName = "",
   autoFocus = true,
 }: DataroomNameDialogProps) {
-  const [name, setName] = useState(initialName);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const form = useForm<z.infer<typeof dataroomNameSchema>>({
+    resolver: zodResolver(dataroomNameSchema),
+    defaultValues: { name: initialName },
+  });
 
   useEffect(() => {
     if (open) {
-      setName(initialName);
-      setError(null);
+      form.reset({ name: initialName });
+      form.clearErrors();
     }
-  }, [open, initialName]);
+  }, [open, initialName, form]);
 
-  const handleSubmit = async () => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setError("Please enter a name");
-      return;
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      form.reset({ name: initialName });
+      form.clearErrors();
     }
-
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await onSubmit(trimmed);
-      onOpenChange(false);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Action failed";
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    onOpenChange(nextOpen);
   };
 
+  const submitHandler = form.handleSubmit(async (values) => {
+    form.clearErrors("root");
+
+    try {
+      await onSubmit(values.name.trim());
+      handleDialogOpenChange(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Action failed";
+      form.setError("root", { type: "manual", message });
+    }
+  });
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) {
-          setName(initialName ?? "");
-          setError(null);
-        }
-        onOpenChange(next);
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          {description ? (
-            <DialogDescription>{description}</DialogDescription>
-          ) : null}
+          {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
-        <div className="space-y-3">
-          <Input
-            placeholder="Dataroom name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            onFocus={() => setError(null)}
-            autoFocus={autoFocus}
-            disabled={isSubmitting}
-          />
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Saving…" : confirmLabel}
-          </Button>
-        </DialogFooter>
+        <Form {...form}>
+          <form onSubmit={submitHandler} className="space-y-3">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder="Dataroom name"
+                      autoFocus={autoFocus}
+                      disabled={form.formState.isSubmitting}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {form.formState.errors.root?.message ? (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.root.message}
+              </p>
+            ) : null}
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleDialogOpenChange(false)}
+                disabled={form.formState.isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Saving…" : confirmLabel}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

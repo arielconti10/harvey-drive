@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { FileItem, SearchFilters, SortBy, SortOrder } from "@/lib/types";
+import type { FileItem } from "@/lib/types";
 import { DashboardHeader } from "./dashboard-header";
 import { FileExplorer } from "./file-explorer";
 import { FileUploadZone } from "./file-upload-zone";
@@ -15,17 +15,6 @@ import { useUiStore } from "@/lib/store/ui";
 import { toast } from "sonner";
 import { ExplorerControls } from "./explorer-controls";
 import { Progress } from "@/components/ui/progress";
-
-const DEFAULT_SORT_BY: SortBy = "date";
-const DEFAULT_SORT_ORDER: SortOrder = "desc";
-const DEFAULT_SEARCH_FILTERS: SearchFilters = {
-  query: "",
-  fileTypes: [],
-  sizeRange: null,
-  dateRange: null,
-  owner: null,
-  shared: null,
-};
 
 export function DashboardClient() {
   const currentFolderId = useUiStore((s) => s.currentFolderId);
@@ -269,7 +258,7 @@ export function DashboardClient() {
       toast.info("Share supports one file at a time");
     }
 
-    setShareFile(shareableFiles[0]);
+    setShareFiles([shareableFiles[0]]);
   };
 
   const handleFilePreview = (file: FileItem) => {
@@ -277,7 +266,7 @@ export function DashboardClient() {
   };
 
   const handleFileShare = (file: FileItem) => {
-    setShareFile(file);
+    setShareFiles([file]);
   };
 
   return (
@@ -343,7 +332,7 @@ export function DashboardClient() {
         canCreate={canCreate}
       />
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-hidden">
         <FileExplorer
           files={files}
           folders={folders}

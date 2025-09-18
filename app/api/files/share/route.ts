@@ -5,10 +5,10 @@ import { nanoid } from "nanoid"
 interface ShareInsert {
   file_id: string
   shared_by_id: string
-  permission: string
+      permission: "view" | "edit" | "read" | "write"
   expires_at: string | null
   share_token?: string
-  shared_with_id?: string
+  shared_with_id?: string | null
 }
 
 export async function POST(request: NextRequest) {
@@ -41,37 +41,69 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    const shareData: ShareInsert = {
+    const requestedPermission = permission === "edit" || permission === "write" ? "edit" : "view"
+    const parsedExpires = expiresAt ? new Date(expiresAt) : null
+    const expiresIso = parsedExpires && !Number.isNaN(parsedExpires.valueOf()) ? parsedExpires.toISOString() : null
+
+    const basePayload: Omit<ShareInsert, "permission"> = {
       file_id: fileId,
       shared_by_id: user.id,
-      permission: permission || "view",
-      expires_at: null,
+      expires_at: expiresIso,
     }
 
     if (createPublicLink) {
       // Create public share link
-      shareData.share_token = nanoid(32)
-      shareData.expires_at = expiresAt || null
+      basePayload.share_token = nanoid(32)
     } else if (sharedWithEmail) {
       // Share with specific user
-      const { data: sharedUser } = await supabase.from("profiles").select("id").eq("email", sharedWithEmail).single()
+      const { data: sharedUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", sharedWithEmail)
+        .single()
 
       if (!sharedUser) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 })
+        // Respond generically to avoid leaking which emails are registered.
+        return NextResponse.json({ success: true })
       }
 
-      shareData.shared_with_id = sharedUser.id
-      shareData.expires_at = expiresAt || null
+      basePayload.shared_with_id = sharedUser.id
     } else {
       return NextResponse.json({ error: "Either email or public link option is required" }, { status: 400 })
     }
 
-    const { data: share, error: shareError } = await supabase.from("file_shares").insert(shareData).select().single()
+    const permissionCandidates = requestedPermission === "edit" ? (["edit", "write"] as const) : (["view", "read"] as const)
+    type ShareRow = {
+      id: string
+      share_token: string | null
+      permission: ShareInsert["permission"]
+      expires_at: string | null
+    }
 
-    if (shareError) {
-      console.error("Share creation error:", shareError)
+    let share: ShareRow | null = null
+    let lastError: unknown = null
+
+    for (const candidate of permissionCandidates) {
+      const { data, error } = await supabase
+        .from("file_shares")
+        .insert({ ...basePayload, permission: candidate })
+        .select("id, share_token, permission, expires_at")
+        .single<ShareRow>()
+
+      if (!error && data) {
+        share = data
+        break
+      }
+
+      lastError = error
+    }
+
+    if (!share) {
+      console.error("Share creation error:", lastError)
       return NextResponse.json({ error: "Failed to create share" }, { status: 500 })
     }
+
+    const normalizedPermission = share.permission === "write" ? "edit" : share.permission === "read" ? "view" : share.permission
 
     return NextResponse.json({
       id: share.id,
@@ -79,9 +111,11 @@ export async function POST(request: NextRequest) {
       shareUrl: share.share_token
         ? `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/shared/${share.share_token}`
         : null,
-      permission: share.permission,
+      permission: normalizedPermission,
       expiresAt: share.expires_at,
     })
+
+
   } catch (error) {
     console.error("Share error:", error)
     return NextResponse.json({ error: "Failed to share file" }, { status: 500 })
@@ -128,7 +162,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to get shares" }, { status: 500 })
     }
 
-    return NextResponse.json({ shares })
+    const normalizedShares = (shares || []).map((share) => ({
+      ...share,
+      permission:
+        share.permission === "write"
+          ? "edit"
+          : share.permission === "read"
+            ? "view"
+            : share.permission,
+    }))
+
+    return NextResponse.json({ shares: normalizedShares })
   } catch (error) {
     console.error("Get shares error:", error)
     return NextResponse.json({ error: "Failed to get shares" }, { status: 500 })

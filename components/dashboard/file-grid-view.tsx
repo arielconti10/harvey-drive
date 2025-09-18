@@ -100,7 +100,10 @@ export function FileGridView({
   const handleDragStart = (event: DragEvent, file: FileItem) => {
     event.dataTransfer.setData("application/x-file-id", file.id);
     if (file.folder_id) {
-      event.dataTransfer.setData("application/x-source-folder-id", file.folder_id);
+      event.dataTransfer.setData(
+        "application/x-source-folder-id",
+        file.folder_id
+      );
     }
     event.dataTransfer.effectAllowed = "move";
   };
@@ -143,7 +146,7 @@ export function FileGridView({
   };
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-4 sm:p-6 overflow-hidden">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
         {/* Folders */}
         {folders.map((folder) => (
@@ -248,7 +251,7 @@ export function FileGridView({
                     >
                       Rename
                     </DropdownMenuItem>
-                    {canPreview(file?.mime_type) && (
+                    {canPreview(file.mime_type, file.name) && (
                       <DropdownMenuItem onClick={() => handlePreview(file)}>
                         <Eye className="h-4 w-4 mr-2" />
                         Preview
@@ -258,9 +261,7 @@ export function FileGridView({
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onFileShare?.(file)}
-                    >
+                    <DropdownMenuItem onClick={() => onFileShare?.(file)}>
                       <Share className="h-4 w-4 mr-2" />
                       Share
                     </DropdownMenuItem>
@@ -273,7 +274,7 @@ export function FileGridView({
               </div>
               <div
                 onClick={() =>
-                  canPreview(file?.mime_type) && handlePreview(file)
+                  canPreview(file.mime_type, file.name) && handlePreview(file)
                 }
               >
                 {file?.mime_type?.startsWith("image/") ? (
@@ -287,7 +288,7 @@ export function FileGridView({
                   />
                 ) : (
                   <div className="h-12 w-12 mx-auto mb-2 flex items-center justify-center text-2xl">
-                    {getFileIcon(file.mime_type)}
+                    {getFileIcon(file.mime_type, file.name)}
                   </div>
                 )}
                 {renamingId === file.id ? (

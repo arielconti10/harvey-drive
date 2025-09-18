@@ -16,7 +16,7 @@ export default function VerifyEmailPage() {
           <div className="flex items-center justify-center mb-4">
             <HardDrive className="h-12 w-12 text-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground">CloudDrive</h1>
+          <h1 className="text-3xl font-serif text-foreground">HarveyDrive</h1>
         </div>
 
         <Card className="shadow-xl bg-card text-card-foreground">
@@ -26,13 +26,14 @@ export default function VerifyEmailPage() {
             </div>
             <CardTitle className="text-2xl">Check your email</CardTitle>
             <CardDescription>
-              We&apos;ve sent you a verification link to complete your registration
+              We&apos;ve sent you a verification link to complete your
+              registration
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground mb-6">
               Click the link in your email to verify your account and start
-              using CloudDrive.
+              using HarveyDrive.
             </p>
             <Link
               href="/auth/login"

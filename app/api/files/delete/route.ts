@@ -39,13 +39,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    const isProduction = process.env.NODE_ENV === "production"
-
-    if (isProduction || !file.blob_url.startsWith("/")) {
-      // Remote delete in production or for legacy absolute URLs kept in local DB
-      await del(file.blob_url)
-    } else {
-      // Remove local uploads when running in development
+    if (file.blob_url.startsWith("/")) {
+      // Clean up local uploads stored during development
       const relativePath = file.blob_url.replace(/^\//, "")
       const localPath = path.join(process.cwd(), "public", relativePath)
       try {
@@ -60,6 +55,9 @@ export async function DELETE(request: NextRequest) {
           throw err
         }
       }
+    } else {
+      // Delete hosted blobs (current and legacy Vercel Blob URLs)
+      await del(file.blob_url)
     }
 
     // Delete from database

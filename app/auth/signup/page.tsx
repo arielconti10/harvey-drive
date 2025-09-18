@@ -25,42 +25,54 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { HardDrive } from "lucide-react";
 
-export default function LoginPage() {
-  const router = useRouter();
-
-  const loginSchema = z.object({
+const signUpSchema = z
+  .object({
+    fullName: z.string().trim().min(1, "Full name is required"),
     email: z
       .string()
       .min(1, "Email is required")
       .email("Enter a valid email address"),
-    password: z.string().min(1, "Password is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "Confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
+export default function SignUpPage() {
+  const router = useRouter();
+
+  const form = useForm<z.infer<typeof signUpSchema>>({
+    resolver: zodResolver(signUpSchema),
     defaultValues: {
+      fullName: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
-  const handleLogin = async (values: z.infer<typeof loginSchema>) => {
+  const handleSignUp = async (values: z.infer<typeof signUpSchema>) => {
     const supabase = createClient();
     form.clearErrors("root");
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
           emailRedirectTo:
             process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
             `${window.location.origin}/dashboard`,
+          data: {
+            full_name: values.fullName,
+          },
         },
       });
       if (error) throw error;
       form.reset();
-      router.push("/dashboard");
+      router.push("/auth/verify-email");
     } catch (error: unknown) {
       form.setError("root", {
         type: "manual",
@@ -83,18 +95,38 @@ export default function LoginPage() {
 
         <Card className="shadow-xl bg-card text-card-foreground">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
+            <CardTitle className="text-2xl text-center">
+              Create account
+            </CardTitle>
             <CardDescription className="text-center">
-              Sign in to access your files
+              Get started with your personal cloud storage
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(handleLogin)}
+                onSubmit={form.handleSubmit(handleSignUp)}
                 className="space-y-4"
                 noValidate
               >
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          autoComplete="name"
+                          placeholder="John Doe"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="email"
@@ -120,29 +152,50 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" autoComplete="current-password" {...field} />
+                        <Input type="password" autoComplete="new-password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 {form.formState.errors.root?.message ? (
-                  <div className="rounded-md bg-red-50/80 p-3 text-sm text-destructive dark:bg-red-900/20">
+                  <div className="rounded-sm bg-red-50/80 p-3 text-sm text-destructive dark:bg-red-900/20">
                     {form.formState.errors.root.message}
                   </div>
                 ) : null}
-                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "Signing in..." : "Sign in"}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? "Creating account..." : "Create account"}
                 </Button>
               </form>
             </Form>
             <div className="mt-6 text-center text-sm">
-              Don&apos;t have an account?{" "}
+              Already have an account?{" "}
               <Link
-                href="/auth/signup"
+                href="/auth/login"
                 className="text-primary-foreground hover:opacity-90 font-medium"
               >
-                Sign up
+                Sign in
               </Link>
             </div>
           </CardContent>

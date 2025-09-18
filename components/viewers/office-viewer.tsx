@@ -15,18 +15,6 @@ export function OfficeViewer({ file, onError }: OfficeViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    const scriptId = "office-js-cdn-script";
-    if (typeof document !== "undefined" && !document.getElementById(scriptId)) {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = "https://appsforoffice.microsoft.com/lib/1/hosted/office.js";
-      script.async = true;
-      script.type = "text/javascript";
-      document.head.appendChild(script);
-    }
-  }, []);
-
-  useEffect(() => {
     setLoading(true);
   }, [file.blob_url]);
 
@@ -90,7 +78,7 @@ export function OfficeViewer({ file, onError }: OfficeViewerProps) {
 
   const handleOpenExternal = () => {
     if (officeOnlineUrl) {
-      window.open(officeOnlineUrl, "_blank");
+      window.open(officeOnlineUrl, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -101,7 +89,7 @@ export function OfficeViewer({ file, onError }: OfficeViewerProps) {
           Unable to generate preview for this Office document
         </p>
         <Button
-          onClick={() => window.open(file.blob_url, "_blank")}
+          onClick={() => window.open(file.blob_url, "_blank", "noopener,noreferrer")}
           variant="outline"
         >
           <ExternalLink className="h-4 w-4 mr-2" />
@@ -126,6 +114,7 @@ export function OfficeViewer({ file, onError }: OfficeViewerProps) {
             variant="outline"
             onClick={handleRefresh}
             disabled={loading}
+            aria-label="Reload Office document"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
@@ -148,6 +137,7 @@ export function OfficeViewer({ file, onError }: OfficeViewerProps) {
           src={officeOnlineUrl}
           className="w-full h-full border-0"
           title={file.name}
+          referrerPolicy="no-referrer"
           onLoad={handleIframeLoad}
           onError={handleIframeError}
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"

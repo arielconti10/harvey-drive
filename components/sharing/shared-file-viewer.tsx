@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Eye, HardDrive, Clock, User } from "lucide-react";
 import type { FileItem } from "@/lib/types";
 import { formatFileSize, canPreview } from "@/lib/utils/file-utils";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { FileViewer } from "../viewers/file-viewer";
 
 interface SharedFileViewerProps {
@@ -28,12 +28,29 @@ export function SharedFileViewer({
   const [showPreview, setShowPreview] = useState(false);
 
   const handleDownload = () => {
-    window.open(file.blob_url, "_blank");
+    try {
+      const anchor = document.createElement("a");
+      anchor.href = file.blob_url;
+      anchor.target = "_blank";
+      anchor.rel = "noreferrer";
+      anchor.download = file.name;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    } catch (error) {
+      console.error("Failed to open download anchor", error);
+      window.open(file.blob_url, "_blank", "noopener,noreferrer");
+    }
   };
 
   const handlePreview = () => {
     setShowPreview(true);
   };
+
+  const createdAtDate = new Date(file.created_at);
+  const expiresAtDate = expiresAt ? parseISO(expiresAt) : null;
+  const hasValidCreated = isValid(createdAtDate);
+  const hasValidExpires = Boolean(expiresAtDate && isValid(expiresAtDate));
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -43,7 +60,7 @@ export function SharedFileViewer({
           <div className="flex items-center space-x-3">
             <HardDrive className="h-8 w-8 text-foreground" />
             <div>
-              <h1 className="text-xl font-semibold">CloudDrive</h1>
+              <h1 className="text-xl font-serif">HarveyDrive</h1>
               <p className="text-sm text-muted-foreground">Shared file</p>
             </div>
           </div>
@@ -87,11 +104,13 @@ export function SharedFileViewer({
                 <div>
                   <p className="text-sm font-medium">Created</p>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(file.created_at), "MMM d, yyyy")}
+                    {hasValidCreated
+                      ? format(createdAtDate, "MMM d, yyyy")
+                      : "—"}
                   </p>
                 </div>
               </div>
-              {expiresAt && (
+              {hasValidExpires && expiresAtDate && (
                 <div className="flex items-center space-x-2">
                   <div className="p-2 bg-accent rounded">
                     <Clock className="h-4 w-4 text-foreground" />
@@ -99,7 +118,7 @@ export function SharedFileViewer({
                   <div>
                     <p className="text-sm font-medium">Expires</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(expiresAt), "MMM d, yyyy")}
+                      {format(expiresAtDate, "MMM d, yyyy")}
                     </p>
                   </div>
                 </div>
@@ -108,7 +127,7 @@ export function SharedFileViewer({
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3">
-              {canPreview(file.mime_type) && (
+              {canPreview(file.mime_type, file.name) && (
                 <Button onClick={handlePreview} className="flex-1">
                   <Eye className="h-4 w-4 mr-2" />
                   Preview
@@ -129,11 +148,11 @@ export function SharedFileViewer({
               <p className="text-sm text-muted-foreground">
                 You have <span className="font-medium">{permission}</span>{" "}
                 access to this file.
-                {expiresAt && (
+                {hasValidExpires && expiresAtDate && (
                   <>
                     {" "}
                     This link expires on{" "}
-                    {format(new Date(expiresAt), "MMMM d, yyyy 'at' h:mm a")}.
+                    {format(expiresAtDate, "MMMM d, yyyy 'at' h:mm a")}.
                   </>
                 )}
               </p>
@@ -147,6 +166,7 @@ export function SharedFileViewer({
         file={file}
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
+        onDownload={handleDownload}
       />
     </div>
   );

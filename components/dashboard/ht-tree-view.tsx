@@ -25,7 +25,11 @@ import {
 } from "lucide-react";
 import type { FileItem } from "@/lib/types";
 import { format } from "date-fns";
-import { formatFileSize, getFileIcon, canPreview } from "@/lib/utils/file-utils";
+import {
+  formatFileSize,
+  getFileIcon,
+  canPreview,
+} from "@/lib/utils/file-utils";
 import { useUiStore } from "@/lib/store/ui";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -61,7 +65,9 @@ export function HtTreeView(props: HtTreeViewProps) {
   const setSelectedItemsStore = useUiStore((s) => s.setSelectedItems);
   const itemCacheRef = React.useRef(new Map<string, ItemPayload>());
   const prevSelectedItemsRef = React.useRef<string[]>([]);
-  const [dragOverFolderId, setDragOverFolderId] = React.useState<string | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = React.useState<string | null>(
+    null
+  );
 
   const tree = useTree<ItemPayload>({
     rootItemId: "root",
@@ -237,7 +243,12 @@ export function HtTreeView(props: HtTreeViewProps) {
   }, [selectedItems, setSelectedItemsStore]);
 
   const containerProps = tree.getContainerProps();
-  const { onDragOver: containerDragOver, onDrop: containerDrop, className: containerClassName, ...restContainerProps } = containerProps;
+  const {
+    onDragOver: containerDragOver,
+    onDrop: containerDrop,
+    className: containerClassName,
+    ...restContainerProps
+  } = containerProps;
 
   return (
     <div
@@ -266,44 +277,51 @@ export function HtTreeView(props: HtTreeViewProps) {
             key={item.getKey()}
             {...item.getProps()}
             className={cn(
-              "group flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800",
+              "group flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-accent",
               dropActive && "bg-accent/60"
             )}
             style={{ paddingLeft: level * 16 }}
             onDragOver={
-              isDroppableFolder ? (event) => handleFolderDragOver(event, folderId!) : undefined
+              isDroppableFolder
+                ? (event) => handleFolderDragOver(event, folderId!)
+                : undefined
             }
             onDrop={
-              isDroppableFolder ? (event) => handleFolderDrop(event, folderId!) : undefined
+              isDroppableFolder
+                ? (event) => handleFolderDrop(event, folderId!)
+                : undefined
             }
             onDragLeave={
-              isDroppableFolder ? (event) => handleFolderDragLeave(event, folderId!) : undefined
+              isDroppableFolder
+                ? (event) => handleFolderDragLeave(event, folderId!)
+                : undefined
             }
           >
             {isFolder ? (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0 text-muted-foreground hover:bg-transparent hover:text-muted-foreground focus-visible:bg-transparent focus-visible:text-muted-foreground"
-                onClick={() =>
-                  item.isExpanded() ? item.collapse() : item.expand()
-                }
+                className="p-0 text-muted-foreground hover:bg-transparent hover:text-muted-foreground focus-visible:bg-transparent focus-visible:text-muted-foreground"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (item.isExpanded()) {
+                    item.collapse();
+                  } else {
+                    item.expand();
+                  }
+                }}
                 aria-label={item.isExpanded() ? "Collapse" : "Expand"}
                 type="button"
               >
-                {item.isExpanded() ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
+                {item.isExpanded() ? <ChevronDown /> : <ChevronRight />}
               </Button>
             ) : (
               <div className="w-6" />
             )}
             {isFolder ? (
-              <Folder className="h-4 w-4 text-blue-500" />
+              <Folder />
             ) : fileData?.mime_type?.startsWith("image/") ? (
-              <div className="relative h-5 w-5 overflow-hidden rounded">
+              <div className="relative overflow-hidden rounded">
                 <Image
                   src={fileData.blob_url || "/placeholder.svg"}
                   alt={fileData.name}
@@ -315,7 +333,8 @@ export function HtTreeView(props: HtTreeViewProps) {
             ) : (
               <span className="text-sm">
                 {getFileIcon(
-                  fileData?.mime_type || "application/octet-stream"
+                  fileData?.mime_type || "application/octet-stream",
+                  fileData?.name
                 )}
               </span>
             )}
@@ -324,18 +343,22 @@ export function HtTreeView(props: HtTreeViewProps) {
               onClick={() =>
                 isFolder
                   ? setCurrentFolderId(data.id)
-                  : fileData && canPreview(fileData.mime_type)
+                  : fileData && canPreview(fileData.mime_type, fileData.name)
                   ? props.onFilePreview(fileData)
                   : undefined
               }
               draggable={!!fileData}
-              onDragStart={fileData ? (event) => handleDragStart(event, fileData) : undefined}
+              onDragStart={
+                fileData
+                  ? (event) => handleDragStart(event, fileData)
+                  : undefined
+              }
               onDragEnd={fileData ? handleDragEnd : undefined}
               type="button"
             >
               {data.name}
             </button>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs">
               {isFolder
                 ? data.created_at
                   ? format(new Date(data.created_at), "MMM d, yyyy")
@@ -346,16 +369,20 @@ export function HtTreeView(props: HtTreeViewProps) {
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="h-4 w-4" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <MoreVertical />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                {fileData && canPreview(fileData.mime_type) && (
+                {fileData && canPreview(fileData.mime_type, fileData.name) && (
                   <DropdownMenuItem
                     onClick={() => props.onFilePreview(fileData)}
                   >
-                    <Eye className="h-4 w-4 mr-2" />
+                    <Eye />
                     Preview
                   </DropdownMenuItem>
                 )}
@@ -363,7 +390,7 @@ export function HtTreeView(props: HtTreeViewProps) {
                   <DropdownMenuItem
                     onClick={() => props.onFileDownload(fileData)}
                   >
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download />
                     Download
                   </DropdownMenuItem>
                 )}
@@ -374,7 +401,7 @@ export function HtTreeView(props: HtTreeViewProps) {
                       : props.onFileDelete(String(data.id))
                   }
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>

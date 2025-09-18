@@ -206,7 +206,10 @@ export function FileExplorer({
       if (!onUpload || acceptedFiles.length === 0) return;
 
       let fileList: FileList | null = null;
-      if (typeof window !== "undefined" && typeof DataTransfer !== "undefined") {
+      if (
+        typeof window !== "undefined" &&
+        typeof DataTransfer !== "undefined"
+      ) {
         const dataTransfer = new DataTransfer();
         for (const file of acceptedFiles) {
           dataTransfer.items.add(file);
@@ -281,55 +284,55 @@ export function FileExplorer({
     filteredAndSortedItems.files.length > 0 ||
     filteredAndSortedItems.folders.length > 0;
 
-  const content: ReactNode = hasItems
-    ? (() => {
-        const commonProps = {
-          files: filteredAndSortedItems.files,
-          folders: filteredAndSortedItems.folders,
-          selectedItems,
-          onItemSelect: handleItemSelect,
-          onSelectAll: handleSelectAll,
-          onDeselectAll: handleDeselectAll,
-          onFolderOpen,
-          onFileDelete,
-          onFolderDelete,
-          onFileDownload,
-          onFilePreview,
-          onFileShare,
-          onRefresh,
-          onRenameFile,
-          onRenameFolder,
-          onFileMove,
-        };
+  const content: ReactNode = hasItems ? (
+    (() => {
+      const commonProps = {
+        files: filteredAndSortedItems.files,
+        folders: filteredAndSortedItems.folders,
+        selectedItems,
+        onItemSelect: handleItemSelect,
+        onSelectAll: handleSelectAll,
+        onDeselectAll: handleDeselectAll,
+        onFolderOpen,
+        onFileDelete,
+        onFolderDelete,
+        onFileDownload,
+        onFilePreview,
+        onFileShare,
+        onRefresh,
+        onRenameFile,
+        onRenameFolder,
+        onFileMove,
+      };
 
-        switch (viewMode) {
-          case "grid":
-            return <FileGridView {...commonProps} />;
-          case "list":
-            return <FileListView {...commonProps} />;
-          case "tree":
-            return (
-              <HtTreeView
-                onFileDownload={onFileDownload}
-                onFilePreview={onFilePreview}
-                onFileShare={onFileShare}
-                onFileDelete={onFileDelete}
-                onFolderDelete={onFolderDelete}
-                onFileMove={onFileMove}
-              />
-            );
-          default:
-            return <FileGridView {...commonProps} />;
-        }
-      })()
-    : (
-        <EmptyState
-          searchQuery={searchFilters.query}
-          onUpload={onUpload}
-          onCreateFolder={onCreateFolder}
-          canCreate={canCreate}
-        />
-      );
+      switch (viewMode) {
+        case "grid":
+          return <FileGridView {...commonProps} />;
+        case "list":
+          return <FileListView {...commonProps} />;
+        case "tree":
+          return (
+            <HtTreeView
+              onFileDownload={onFileDownload}
+              onFilePreview={onFilePreview}
+              onFileShare={onFileShare}
+              onFileDelete={onFileDelete}
+              onFolderDelete={onFolderDelete}
+              onFileMove={onFileMove}
+            />
+          );
+        default:
+          return <FileGridView {...commonProps} />;
+      }
+    })()
+  ) : (
+    <EmptyState
+      searchQuery={searchFilters.query}
+      onUpload={onUpload}
+      onCreateFolder={onCreateFolder}
+      canCreate={canCreate}
+    />
+  );
 
   const rootProps = getRootProps({
     className: `relative h-full min-h-[20rem] transition-colors ${
@@ -348,10 +351,14 @@ export function FileExplorer({
           }`}
         >
           <p className="text-lg font-medium">Drop files to upload</p>
-          <p className="text-sm">Files will be uploaded to the current folder.</p>
+          <p className="text-sm">
+            Files will be uploaded to the current folder.
+          </p>
         </div>
       )}
-      <div className="relative z-10 h-full">{content}</div>
+      <div className="relative z-10 flex h-full min-h-0 flex-col">
+        <div className="flex-1 overflow-y-auto">{content}</div>
+      </div>
       <input {...getInputProps()} />
     </div>
   );

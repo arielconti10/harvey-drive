@@ -12,6 +12,7 @@ import { Home } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import type { DragEvent } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface BreadcrumbProps {
   currentFolderId: string | null;
@@ -109,36 +110,42 @@ export function Breadcrumb({
 
   return (
     <div className={cn("px-6 py-3", className)}>
-      <BreadcrumbRoot>
-        <BreadcrumbList>
+      <BreadcrumbRoot className="overflow-x-auto">
+        <BreadcrumbList className="!flex-nowrap items-center gap-1.5 whitespace-nowrap">
           {breadcrumbs.map((item, index) => {
             const isLast = index === breadcrumbs.length - 1;
             const isRoot = index === 0;
 
             return (
               <Fragment key={item.id ?? "root"}>
-                <BreadcrumbItem>
+                <BreadcrumbItem className="min-w-0">
                   {isLast ? (
                     <BreadcrumbPage
-                      className="flex items-center gap-1.5 text-gray-900 dark:text-white"
+                      className="flex min-w-0 items-center gap-1.5"
+                      title={item.name}
                       onDragOver={(event) => handleDragOver(event)}
                       onDrop={(event) => handleDrop(event, item.id)}
                     >
                       {isRoot && <Home className="h-4 w-4" />}
-                      {item.name}
+                      <span className="max-w-[140px] truncate text-left text-sm sm:max-w-[220px]">
+                        {item.name}
+                      </span>
                     </BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink asChild>
-                      <button
+                      <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => onNavigate(item.id)}
-                        className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-gray-700/70 dark:hover:text-white"
+                        title={item.name}
                         onDragOver={(event) => handleDragOver(event)}
                         onDrop={(event) => handleDrop(event, item.id)}
                       >
                         {isRoot && <Home className="h-4 w-4" />}
-                        {item.name}
-                      </button>
+                        <span className="max-w-[140px] truncate text-left sm:max-w-[220px]">
+                          {item.name}
+                        </span>
+                      </Button>
                     </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>

@@ -156,7 +156,9 @@ export function FileTreeView({
               unoptimized
             />
           ) : (
-            <span className="text-sm">{getFileIcon(file.mime_type)}</span>
+            <span className="text-sm">
+              {getFileIcon(file.mime_type, file.name)}
+            </span>
           )}
           <span className="flex-1 font-medium">{file.name}</span>
           <span className="text-xs text-gray-500">
@@ -210,7 +212,7 @@ export function FileTreeView({
           aria-level={level + 1}
           aria-selected={selectedItems.has(folder.id)}
           tabIndex={-1}
-          className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-ring/50"
+          className="flex items-center space-x-2 p-2 rounded focus:outline-none focus:ring-2 focus:ring-ring/50"
           style={{ paddingLeft: level * 16 }}
           onKeyDown={(e) => {
             if (e.key === "ArrowRight") {
@@ -253,7 +255,7 @@ export function FileTreeView({
             checked={selectedItems.has(folder.id)}
             onCheckedChange={(checked) => onItemSelect(folder.id, !!checked)}
           />
-          <Folder className="h-4 w-4 text-blue-500" />
+          <Folder className="h-4 w-4" />
           <span
             className="flex-1 cursor-pointer font-medium"
             onClick={() => onFolderOpen(folder.id)}
@@ -309,12 +311,10 @@ export function FileTreeView({
   return (
     <div className="p-6" role="tree" aria-label="Files" ref={treeRootRef}>
       <div className="space-y-1" role="none">
-        {/* Folders (recursive) */}
         {folders.map((folder) => (
           <TreeFolderNode key={folder.id} folder={folder} level={0} />
         ))}
 
-        {/* Files at root */}
         {files.map((file) => (
           <TreeFileRow key={file.id} file={file} level={0} />
         ))}

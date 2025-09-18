@@ -20,9 +20,20 @@ import { toast } from "sonner";
 import { useState } from "react";
 import type { DragEvent } from "react";
 import { Input } from "@/components/ui/input";
-import { Folder, MoreVertical, Download, Trash2, Share, Eye } from "lucide-react";
+import {
+  Folder,
+  MoreVertical,
+  Download,
+  Trash2,
+  Share,
+  Eye,
+} from "lucide-react";
 import type { FileItem, FolderItem } from "@/lib/types";
-import { formatFileSize, getFileIcon, canPreview } from "@/lib/utils/file-utils";
+import {
+  formatFileSize,
+  getFileIcon,
+  canPreview,
+} from "@/lib/utils/file-utils";
 import Image from "next/image";
 import { format } from "date-fns";
 
@@ -111,7 +122,10 @@ export function FileListView({
   const handleDragStart = (event: DragEvent, file: FileItem) => {
     event.dataTransfer.setData("application/x-file-id", file.id);
     if (file.folder_id) {
-      event.dataTransfer.setData("application/x-source-folder-id", file.folder_id);
+      event.dataTransfer.setData(
+        "application/x-source-folder-id",
+        file.folder_id
+      );
     }
     event.dataTransfer.effectAllowed = "move";
   };
@@ -148,12 +162,12 @@ export function FileListView({
   };
 
   const handlePreview = (file: FileItem) => {
-    if (!onFilePreview || !canPreview(file.mime_type)) return;
+    if (!onFilePreview || !canPreview(file.mime_type, file.name)) return;
     onFilePreview(file);
   };
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-4 sm:p-6 overflow-hidden">
       <div className="sm:hidden">
         <div className="flex items-center justify-between pb-3">
           <div className="flex items-center gap-2">
@@ -187,7 +201,9 @@ export function FileListView({
             >
               <Checkbox
                 checked={selectedItems.has(folder.id)}
-                onCheckedChange={(checked) => onItemSelect(folder.id, !!checked)}
+                onCheckedChange={(checked) =>
+                  onItemSelect(folder.id, !!checked)
+                }
                 onClick={(event) => event.stopPropagation()}
                 className="mt-1"
               />
@@ -215,7 +231,8 @@ export function FileListView({
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Updated {format(new Date(folder.created_at), "MMM d, yyyy")}
+                      Updated{" "}
+                      {format(new Date(folder.created_at), "MMM d, yyyy")}
                     </p>
                   </div>
                   <DropdownMenu>
@@ -233,7 +250,9 @@ export function FileListView({
                       >
                         Rename
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onFolderDelete(folder.id)}>
+                      <DropdownMenuItem
+                        onClick={() => onFolderDelete(folder.id)}
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -248,7 +267,9 @@ export function FileListView({
             <div
               key={file.id}
               className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm"
-              onClick={() => canPreview(file.mime_type) && handlePreview(file)}
+              onClick={() =>
+                canPreview(file.mime_type, file.name) && handlePreview(file)
+              }
             >
               <Checkbox
                 checked={selectedItems.has(file.id)}
@@ -270,7 +291,7 @@ export function FileListView({
                     </div>
                   ) : (
                     <span className="text-xl" aria-hidden="true">
-                      {getFileIcon(file.mime_type)}
+                      {getFileIcon(file.mime_type, file.name)}
                     </span>
                   )}
                   <div className="min-w-0 flex-1">
@@ -281,7 +302,8 @@ export function FileListView({
                         onClick={(event) => event.stopPropagation()}
                         onBlur={() => submitRename(file.id, "file")}
                         onKeyDown={(event) => {
-                          if (event.key === "Enter") submitRename(file.id, "file");
+                          if (event.key === "Enter")
+                            submitRename(file.id, "file");
                           if (event.key === "Escape") setRenamingId(null);
                         }}
                         autoFocus
@@ -293,7 +315,8 @@ export function FileListView({
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      {formatFileSize(file.size)} · {format(new Date(file.created_at), "MMM d, yyyy")}
+                      {formatFileSize(file.size)} ·{" "}
+                      {format(new Date(file.created_at), "MMM d, yyyy")}
                     </p>
                   </div>
                   <DropdownMenu>
@@ -311,7 +334,7 @@ export function FileListView({
                       >
                         Rename
                       </DropdownMenuItem>
-                      {canPreview(file.mime_type) && (
+                      {canPreview(file.mime_type, file.name) && (
                         <DropdownMenuItem onClick={() => handlePreview(file)}>
                           <Eye className="mr-2 h-4 w-4" />
                           Preview
@@ -368,7 +391,9 @@ export function FileListView({
                   onClick={() => onFolderOpen(folder.id)}
                   onDragOver={(event) => handleFolderDragOver(event, folder.id)}
                   onDrop={(event) => handleFolderDrop(event, folder.id)}
-                  onDragLeave={(event) => handleFolderDragLeave(event, folder.id)}
+                  onDragLeave={(event) =>
+                    handleFolderDragLeave(event, folder.id)
+                  }
                 >
                   <TableCell>
                     <Checkbox
@@ -385,7 +410,9 @@ export function FileListView({
                       {renamingId === folder.id ? (
                         <Input
                           value={renameValue}
-                          onChange={(event) => setRenameValue(event.target.value)}
+                          onChange={(event) =>
+                            setRenameValue(event.target.value)
+                          }
                           onBlur={() => submitRename(folder.id, "folder")}
                           onKeyDown={(event) => {
                             if (event.key === "Enter")
@@ -396,7 +423,10 @@ export function FileListView({
                           className="h-7 w-56"
                         />
                       ) : (
-                        <span className="truncate font-medium" title={folder.name}>
+                        <span
+                          className="truncate font-medium"
+                          title={folder.name}
+                        >
                           {folder.name}
                         </span>
                       )}
@@ -422,7 +452,9 @@ export function FileListView({
                         >
                           Rename
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onFolderDelete(folder.id)}>
+                        <DropdownMenuItem
+                          onClick={() => onFolderDelete(folder.id)}
+                        >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
@@ -463,13 +495,15 @@ export function FileListView({
                         </div>
                       ) : (
                         <span className="text-lg">
-                          {getFileIcon(file.mime_type)}
+                          {getFileIcon(file.mime_type, file.name)}
                         </span>
                       )}
                       {renamingId === file.id ? (
                         <Input
                           value={renameValue}
-                          onChange={(event) => setRenameValue(event.target.value)}
+                          onChange={(event) =>
+                            setRenameValue(event.target.value)
+                          }
                           onBlur={() => submitRename(file.id, "file")}
                           onKeyDown={(event) => {
                             if (event.key === "Enter")
@@ -480,7 +514,10 @@ export function FileListView({
                           className="h-7 w-56"
                         />
                       ) : (
-                        <span className="truncate font-medium" title={file.name}>
+                        <span
+                          className="truncate font-medium"
+                          title={file.name}
+                        >
                           {file.name}
                         </span>
                       )}
@@ -505,7 +542,7 @@ export function FileListView({
                         >
                           Rename
                         </DropdownMenuItem>
-                        {canPreview(file.mime_type) && (
+                        {canPreview(file.mime_type, file.name) && (
                           <DropdownMenuItem onClick={() => handlePreview(file)}>
                             <Eye className="mr-2 h-4 w-4" />
                             Preview

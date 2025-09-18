@@ -29,18 +29,27 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  const pathname = request.nextUrl.pathname;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
+  const protectedPatterns = [/^\/dashboard/, /^\/api\/(files|folders|datarooms)/];
+  const requiresAuth = protectedPatterns.some((pattern) => pattern.test(pathname));
+  const isAuthRoute = pathname.startsWith("/auth");
+  const isSharedRoute = pathname.startsWith("/shared");
+  const isHome = pathname === "/";
+
+  if (!user && requiresAuth) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && (isAuthRoute || (!requiresAuth && !isSharedRoute && isHome))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 

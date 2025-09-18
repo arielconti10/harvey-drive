@@ -13,6 +13,8 @@ const config = [
       "dist/**",
       ".history/**",
       "eslint.config.cjs",
+      "next-env.d.ts",
+      "public/pdf.worker.min.mjs",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),

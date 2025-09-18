@@ -64,11 +64,9 @@ export function EmptyState({
   if (searchQuery) {
     return (
       <div className="flex min-h-[220px] flex-col items-center justify-center px-4 text-center sm:min-h-[256px]">
-        <Search className="h-16 w-16 text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          No results found
-        </h3>
-        <p className="text-gray-500 mb-4">
+        <Search className="h-16 w-16 mb-4" />
+        <h3 className="text-lg font-medium mb-2">No results found</h3>
+        <p className="mb-4">
           No files or folders match &ldquo;{searchQuery}&rdquo;. Try adjusting
           your search terms.
         </p>
@@ -78,18 +76,16 @@ export function EmptyState({
 
   return (
     <div className="mt-8 flex min-h-[220px] flex-col items-center justify-center px-4 text-center sm:min-h-[256px]">
-      <div className="mb-4 rounded-full bg-gray-100 p-6 dark:bg-gray-800">
-        <FolderPlus className="h-16 w-16 text-gray-400" />
+      <div className="mb-4 rounded-full bg-accent p-6 ">
+        <FolderPlus className="h-16 w-16 " />
       </div>
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-        This folder is empty
-      </h3>
-      <p className="text-gray-500 mb-6">
+      <h3 className="text-lg font-medium mb-2">This folder is empty</h3>
+      <p className="mb-6">
         Get started by uploading files or creating folders.
       </p>
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:space-x-3 sm:gap-0">
         <Button onClick={handleUploadClick} disabled={!canCreate || !onUpload}>
-          <Upload className="h-4 w-4 mr-2" />
+          <Upload />
           Upload files
         </Button>
         <Button
@@ -99,7 +95,7 @@ export function EmptyState({
           }
           disabled={!canCreate || !onCreateFolder}
         >
-          <FolderPlus className="h-4 w-4 mr-2" />
+          <FolderPlus />
           New folder
         </Button>
       </div>

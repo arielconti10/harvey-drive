@@ -1,69 +1,64 @@
 import { createClient } from "@/lib/supabase/server"
 import { SharedFileViewer } from "@/components/sharing/shared-file-viewer"
-import type { FileItem } from "@/lib/types"
 import { notFound } from "next/navigation"
 
-interface SharedFilePageProps {
-  params: Promise<{
-    token: string
-  }>
+type PublicShareRow = {
+  share_id: string
+  permission: "view" | "edit"
+  expires_at: string | null
+  file_id: string
+  file_name: string
+  original_name: string
+  size: number
+  mime_type: string
+  blob_url: string
+  file_created_at: string
+  file_updated_at: string
+  folder_id: string | null
+  dataroom_id: string | null
+  is_public: boolean
+  owner_full_name: string | null
+  owner_email: string | null
 }
 
-export default async function SharedFilePage(props: SharedFilePageProps) {
-  const params = await props.params;
+interface SharedFilePageProps {
+  params: {
+    token: string
+  }
+}
+
+export default async function SharedFilePage({ params }: SharedFilePageProps) {
   const supabase = await createClient()
   const { token } = params
 
-  type SharedFile = FileItem & {
-    profiles: {
-      full_name: string | null
-      email: string | null
-    }
-  }
-
-  type ShareRecord = {
-    id: string
-    permission: "view" | "edit"
-    expires_at: string | null
-    files: SharedFile
-  }
-
   try {
-    // Get share information
-    const { data: share, error } = await supabase
-      .from("file_shares")
-      .select(`
-        id,
-        permission,
-        expires_at,
-        files!inner(
-          id,
-          name,
-          original_name,
-          size,
-          mime_type,
-          blob_url,
-          created_at,
-          profiles!files_owner_id_fkey(full_name, email)
-        )
-      `)
-      .eq("share_token", token)
-      .single()
+    const { data, error } = await supabase.rpc("get_public_share", { token })
 
-    if (error || !share) {
+    if (error || !data || data.length === 0) {
       notFound()
     }
 
-    // Check if share has expired
-    if (share.expires_at && new Date(share.expires_at) < new Date()) {
-      notFound()
-    }
-
-    const shareRecord = share as ShareRecord
+    const shareRecord = data[0] as PublicShareRow
 
     return (
       <SharedFileViewer
-        file={shareRecord.files}
+        file={{
+          id: shareRecord.file_id,
+          name: shareRecord.file_name,
+          original_name: shareRecord.original_name,
+          size: shareRecord.size,
+          mime_type: shareRecord.mime_type,
+          blob_url: shareRecord.blob_url,
+          folder_id: shareRecord.folder_id,
+          dataroom_id: shareRecord.dataroom_id,
+          is_public: shareRecord.is_public,
+          created_at: shareRecord.file_created_at,
+          updated_at: shareRecord.file_updated_at,
+          profiles: {
+            full_name: shareRecord.owner_full_name,
+            email: shareRecord.owner_email,
+          },
+        }}
         permission={shareRecord.permission}
         expiresAt={shareRecord.expires_at}
       />

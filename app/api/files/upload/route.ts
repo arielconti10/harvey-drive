@@ -1,9 +1,6 @@
 import { put } from "@vercel/blob";
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
-import { Buffer } from "node:buffer";
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import {
   MAX_FILE_SIZE_BYTES,
   isAllowedFileType,
@@ -24,8 +21,8 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const folderId = formData.get("folderId") as string | null;
-    const dataroomId = formData.get("dataroomId") as string | null;
+    const folderId = (formData.get("folderId") as string | null) || null;
+    const dataroomId = (formData.get("dataroomId") as string | null) || null;
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -45,7 +42,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Avoid duplicate names within the same folder by auto-suffixing
+    // Validate container ownership before writing metadata
+    if (dataroomId) {
+      type DataroomRow = { id: string; owner_id: string };
+      const { data: room } = await supabase
+        .from("datarooms")
+        .select("id, owner_id")
+        .eq("id", dataroomId)
+        .eq("owner_id", user.id)
+        .maybeSingle<DataroomRow>();
+      if (!room) {
+        return NextResponse.json({ error: "Dataroom not found" }, { status: 404 });
+      }
+    }
+
+    if (folderId) {
+      type FolderRow = { id: string; owner_id: string; dataroom_id: string | null };
+      const { data: folder } = await supabase
+        .from("folders")
+        .select("id, owner_id, dataroom_id")
+        .eq("id", folderId)
+        .eq("owner_id", user.id)
+        .maybeSingle<FolderRow>();
+      if (!folder) {
+        return NextResponse.json({ error: "Folder not found" }, { status: 404 });
+      }
+      if (dataroomId && folder.dataroom_id !== dataroomId) {
+        return NextResponse.json({ error: "Folder not in the specified dataroom" }, { status: 400 });
+      }
+    }
+
+    // Avoid duplicate names within the same folder/dataroom by auto-suffixing
     const originalName = file.name;
     const dotIndex = originalName.lastIndexOf(".");
     const base = dotIndex > 0 ? originalName.slice(0, dotIndex) : originalName;
@@ -53,16 +80,13 @@ export async function POST(request: NextRequest) {
 
     let existingNames: string[] = [];
     {
-      type NameRow = { name: string }
+      type NameRow = { name: string };
       let nameQuery = supabase
         .from("files")
         .select("name")
         .eq("owner_id", user.id);
-      if (folderId) {
-        nameQuery = nameQuery.eq("folder_id", folderId);
-      } else {
-        nameQuery = nameQuery.is("folder_id", null);
-      }
+      nameQuery = folderId ? nameQuery.eq("folder_id", folderId) : nameQuery.is("folder_id", null);
+      nameQuery = dataroomId ? nameQuery.eq("dataroom_id", dataroomId) : nameQuery.is("dataroom_id", null);
       const { data: existing } = await nameQuery;
       const existingRecords: NameRow[] = Array.isArray(existing)
         ? (existing as NameRow[])
@@ -77,29 +101,9 @@ export async function POST(request: NextRequest) {
       candidateName = `${base} (${n})${ext}`;
     }
 
-    const isProduction = process.env.NODE_ENV === "production";
-    let blobUrl: string;
-
-    if (isProduction) {
-      // Upload to Vercel Blob with user-specific path (use original filename for storage key)
-      const filename = `${user.id}/${Date.now()}-${originalName}`;
-      const blob = await put(filename, file, { access: "public" });
-      blobUrl = blob.url;
-    } else {
-      // Persist locally during development to avoid remote uploads
-      const uploadDir = path.join(process.cwd(), "public", "uploads");
-      await fs.mkdir(uploadDir, { recursive: true });
-
-      const sanitizedOriginalName = path
-        .basename(originalName)
-        .replace(/[^a-zA-Z0-9._-]/g, "_");
-      const safeName = `${user.id}-${Date.now()}-${sanitizedOriginalName}`;
-      const filePath = path.join(uploadDir, safeName);
-      const arrayBuffer = await file.arrayBuffer();
-      await fs.writeFile(filePath, Buffer.from(arrayBuffer));
-
-      blobUrl = `/uploads/${safeName}`;
-    }
+    const filename = `${user.id}/${Date.now()}-${originalName}`;
+    const blob = await put(filename, file, { access: "public" });
+    const blobUrl = blob.url;
 
     // Save file metadata to database
     const { data: fileData, error: dbError } = await supabase

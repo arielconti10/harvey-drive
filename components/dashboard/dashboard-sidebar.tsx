@@ -63,7 +63,7 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const { datarooms, create, remove, rename } = useDatarooms();
+  const { datarooms, create, remove, rename, loading } = useDatarooms();
   const currentDataroomId = useUiStore((s) => s.currentDataroomId);
   const setCurrentDataroomId = useUiStore((s) => s.setCurrentDataroomId);
   const sortedRooms = useMemo(
@@ -110,10 +110,14 @@ export function DashboardSidebar({
   };
 
   useEffect(() => {
+    if (loading) {
+      return;
+    }
+
     if (sortedRooms.length === 0 && !showCreateDialog) {
       setShowCreateDialog(true);
     }
-  }, [sortedRooms, showCreateDialog]);
+  }, [loading, sortedRooms, showCreateDialog]);
 
   const handleDeleteDataroom = async () => {
     if (!roomToDelete) return;
@@ -178,7 +182,7 @@ export function DashboardSidebar({
       <div className="flex items-center px-6 py-4 border-b border-border">
         <HardDrive className="h-8 w-8 text-foreground" />
         <span className="ml-2 text-xl font-bold text-foreground">
-          CloudDrive
+          HarveyDrive
         </span>
       </div>
 

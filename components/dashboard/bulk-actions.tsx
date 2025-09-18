@@ -84,70 +84,67 @@ export function BulkActions({
     <>
       <Card
         className={cn(
-          "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md border border-border bg-card text-card-foreground shadow-lg",
+          "fixed bottom-4 z-50 mx-auto max-w-md border border-border bg-card text-card-foreground shadow-lg",
           "sm:bottom-6 sm:inset-x-auto sm:left-1/2 sm:right-auto sm:max-w-none sm:w-auto sm:-translate-x-1/2"
         )}
       >
-        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <span className="text-sm font-medium">
-            {selectedItems.size} item{selectedItems.size !== 1 ? "s" : ""} selected
+            {selectedItems.size} item{selectedItems.size !== 1 ? "s" : ""}{" "}
+            selected
           </span>
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-              {selectedFiles.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleBulkDownload}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              )}
-              {shareDisabled ? (
-                <TooltipProvider>
-                  <Tooltip delayDuration={150}>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex">
-                        <Button size="sm" variant="outline" disabled>
-                          <Share className="h-4 w-4 mr-2" />
-                          Share
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>{shareButtonTitle}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <Button size="sm" variant="outline" onClick={handleBulkShare}>
-                  <Share className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+            {selectedFiles.length > 0 && (
+              <Button size="sm" variant="outline" onClick={handleBulkDownload}>
+                <Download />
+                Download
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>
-                    <Archive className="h-4 w-4 mr-2" />
-                    Archive
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button size="sm" variant="ghost" onClick={onClearSelection}>
-                Cancel
+            )}
+            {shareDisabled ? (
+              <TooltipProvider>
+                <Tooltip delayDuration={150}>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <Button size="sm" variant="outline" disabled>
+                        <Share />
+                        Share
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{shareButtonTitle}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Button size="sm" variant="outline" onClick={handleBulkShare}>
+                <Share />
+                Share
               </Button>
-            </div>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 />
+              Delete
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem>
+                  <Archive />
+                  Archive
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button size="sm" variant="ghost" onClick={onClearSelection}>
+              Cancel
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
