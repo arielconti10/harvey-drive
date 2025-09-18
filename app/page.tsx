@@ -1,15 +1,12 @@
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { HardDrive } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export default function HomePage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default function HomePage({ searchParams }: { searchParams: SearchParams }) {
   const code = searchParams.code;
 
   if (code) {
@@ -30,62 +27,53 @@ export default function HomePage({
   }
 
   return (
-    <div className="min-h-screen flex flex-col dark bg-background text-foreground">
-      {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <nav className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <HardDrive className="h-8 w-8 text-foreground" />
-            <span className="text-2xl font-serif text-foreground">
-              HarveyDrive
+    <div className="flex min-h-screen flex-col bg-[#0f0e0d] text-white">
+      <header className="px-6 py-6">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 text-sm text-white/70">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+              <HardDrive className="h-5 w-5" aria-hidden="true" />
             </span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/auth/login">
-              <Button variant="ghost">Sign in</Button>
-            </Link>
-            <Link href="/auth/signup">
-              <Button>Get started</Button>
-            </Link>
-          </div>
-        </nav>
+            <span className="font-serif text-lg text-white">HarveyDrive</span>
+          </Link>
+          <Link href="/auth/login" className="text-sm text-white/60 hover:text-white">
+            Sign in
+          </Link>
+        </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="container mx-auto flex-1 px-4 py-20">
-        <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-serif text-foreground mb-6 text-balance">
-            Your files,{" "}
-            <span className="text-muted-foreground">everywhere</span>
-          </h1>
-          <p className="text-xl font-light text-muted-foreground mb-8 text-pretty">
-            Store, sync, and share your files with HarveyDrive. Access your
-            documents, photos, and videos from any device, anywhere in the
-            world.
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-6 py-12 text-center sm:py-20">
+        <div className="space-y-6">
+          <p className="text-sm uppercase tracking-[0.28em] text-white/50">Professional Class AI</p>
+          <h1 className="text-balance font-serif text-5xl leading-tight sm:text-6xl">Secure intelligence for modern deal teams</h1>
+          <p className="mx-auto max-w-2xl text-lg text-white/70">
+            Domain-specific AI that keeps every dataroom organised, every policy enforced, and every client response on-brand.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/signup">
-              <Button size="lg" className="text-lg px-8 py-3">
-                Start for free
-              </Button>
-            </Link>
-            <Link href="/auth/login">
-              <Button
-                variant="outline"
-                size="lg"
-                className="text-lg px-8 py-3 bg-transparent"
-              >
-                Sign in
+          <div>
+            <Link href="/auth/signup" className="inline-flex">
+              <Button className="bg-white px-10 py-6 text-base font-medium text-[#0f0e0d] hover:bg-white/90">
+                Request a demo
               </Button>
             </Link>
           </div>
         </div>
+
+        <div className="mt-16 w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+          <Image
+            src="/placeholder.jpg"
+            alt="HarveyDrive app preview"
+            width={1200}
+            height={720}
+            className="w-full object-cover"
+            priority
+          />
+        </div>
       </main>
 
-      {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 mt-20 border-t border-border">
-        <div className="text-center text-muted-foreground">
-          <p>&copy; 2024 HarveyDrive. Built with Next.js and Supabase.</p>
+      <footer className="px-6 py-8 text-xs text-white/40">
+        <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-3 sm:flex-row">
+          <p>&copy; {new Date().getFullYear()} HarveyDrive. Built for the Harvey.ai technical challenge.</p>
+          <p>Security-first data rooms, now with AI.</p>
         </div>
       </footer>
     </div>

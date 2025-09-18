@@ -70,18 +70,18 @@
 
 .dark {
   /* Dark theme (landing focus) */
-  --background: #0f0e0d; /* gray-950-ink */
+  --background: #0f0e0d; /* graphite */
   --foreground: #ffffff;
-  --card: #1f1d1a; /* gray-900 */
+  --card: #1f1d1a; /* deep gray */
   --card-foreground: #ffffff;
   --popover: #1f1d1a;
   --popover-foreground: #ffffff;
   --primary: #ffffff;
   --primary-foreground: #0f0e0d;
-  --secondary: #33312c; /* gray-800 */
+  --secondary: #33312c; /* muted graphite */
   --secondary-foreground: #ffffff;
   --muted: #33312c;
-  --muted-foreground: #cccac6; /* gray-300 */
+  --muted-foreground: #cccac6;
   --accent: #33312c;
   --accent-foreground: #ffffff;
   --destructive: #f26161;
