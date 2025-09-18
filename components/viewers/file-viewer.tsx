@@ -134,6 +134,15 @@ export function FileViewer({
 
   const categoryLabel = categoryLabels.get(category) ?? "File";
   const sizeLabel = file ? formatFileSize(file.size) : "";
+  const mimeLabel = useMemo(() => {
+    if (!file) return "";
+    if (file.mime_type) {
+      return file.mime_type.split(";")[0];
+    }
+
+    const ext = file.name?.split(".").pop();
+    return ext ? `${ext.toUpperCase()} file` : "";
+  }, [file]);
 
   const handleDownload = useCallback(() => {
     if (!file) return;
@@ -181,11 +190,17 @@ export function FileViewer({
                 <DialogTitle className="truncate text-lg font-semibold">
                   {file.name}
                 </DialogTitle>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <Badge variant="secondary">{categoryLabel}</Badge>
-                  <span>{sizeLabel}</span>
+                <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground sm:flex-nowrap sm:gap-3">
+                  <Badge variant="secondary" className="flex-shrink-0">
+                    {categoryLabel}
+                  </Badge>
+                  <span className="flex-shrink-0">{sizeLabel}</span>
 
-                  {file.mime_type && <span>{file.mime_type}</span>}
+                  {mimeLabel && (
+                    <span className="min-w-0 flex-1 truncate" title={mimeLabel}>
+                      {mimeLabel}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

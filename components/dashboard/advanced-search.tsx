@@ -69,8 +69,16 @@ export function AdvancedSearch({
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0">
+          <Button
+            variant="outline"
+            size="icon"
+            className="relative shrink-0"
+          >
             <Filter />
+            <span className="sr-only">File type filters</span>
+            {filters.fileTypes.length > 0 && (
+              <span className="absolute -right-1 -top-1 inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">

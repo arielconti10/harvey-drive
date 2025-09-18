@@ -265,7 +265,7 @@ export function DashboardSidebar({
                         Rename
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="gap-2 p-2 text-destructive focus:text-destructive"
+                        className="p-2 text-destructive focus:text-destructive"
                         onClick={(event) => {
                           event.preventDefault();
                           openDeleteDialog(activeRoom);

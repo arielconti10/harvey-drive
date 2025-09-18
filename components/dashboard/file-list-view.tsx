@@ -27,6 +27,7 @@ import {
   Trash2,
   Share,
   Eye,
+  Pencil,
 } from "lucide-react";
 import type { FileItem, FolderItem } from "@/lib/types";
 import {
@@ -241,7 +242,7 @@ export function FileListView({
                       onClick={(event) => event.stopPropagation()}
                     >
                       <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
+                        <MoreVertical />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -253,7 +254,7 @@ export function FileListView({
                       <DropdownMenuItem
                         onClick={() => onFolderDelete(folder.id)}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 />
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -443,19 +444,20 @@ export function FileListView({
                         onClick={(event) => event.stopPropagation()}
                       >
                         <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
+                          <MoreVertical />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem
                           onClick={() => startRename(folder.id, folder.name)}
                         >
+                          <Pencil />
                           Rename
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => onFolderDelete(folder.id)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <Trash2 />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
