@@ -124,8 +124,37 @@ export function useFiles({
         body: formData,
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Upload failed");
+        if (response.status === 413) {
+          throw new Error("File is too large. Maximum size is 50 MB.");
+        }
+
+        let rawBody = "";
+        try {
+          rawBody = await response.text();
+        } catch {
+          // Ignore failure and fall back to generic message below
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+        if (rawBody) {
+          if (contentType.includes("application/json")) {
+            try {
+              const parsed = JSON.parse(rawBody);
+              if (parsed?.error) {
+                throw new Error(parsed.error);
+              }
+            } catch {
+              // Body was not valid JSON; fall through to show raw text
+            }
+          }
+
+          const trimmed = rawBody.trim();
+          if (trimmed) {
+            throw new Error(trimmed);
+          }
+        }
+
+        throw new Error("Upload failed");
       }
       return (await response.json()) as FileItem;
     },
