@@ -267,6 +267,7 @@ export function ExplorerControls({
               <DropdownMenuItem
                 disabled={!canCreate}
                 onClick={() => canCreate && setCreateFolderOpen(true)}
+                data-testid="btn-new-folder"
               >
                 <FolderPlus className="h-4 w-4" />
                 New Folder
@@ -281,6 +282,7 @@ export function ExplorerControls({
             accept={ACCEPT_FILE_TYPES_ATTRIBUTE}
             onChange={handleFileUpload}
             className="hidden"
+            data-testid="input-upload"
           />
         </div>
       </div>

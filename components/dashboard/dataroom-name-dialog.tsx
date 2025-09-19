@@ -98,6 +98,7 @@ export function DataroomNameDialog({
                       placeholder="Dataroom name"
                       autoFocus={autoFocus}
                       disabled={form.formState.isSubmitting}
+                      data-testid="input-dataroom-name"
                       {...field}
                     />
                   </FormControl>

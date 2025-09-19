@@ -57,7 +57,7 @@ export function FileTreeView({
   };
 
   const handleDownload = (file: FileItem) => {
-    window.open(file.blob_url, "_blank");
+    window.open(file.blob_url, "_blank", "noopener,noreferrer");
   };
 
   function focusNextPrev(current: HTMLElement | null, direction: 1 | -1) {
@@ -126,6 +126,8 @@ export function FileTreeView({
           aria-selected={selectedItems.has(file.id)}
           aria-level={level + 1}
           tabIndex={-1}
+          data-testid="file-row"
+          data-name={file.name}
           className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-ring/50"
           style={{ paddingLeft: level * 16 }}
           onKeyDown={(e) => {
@@ -157,7 +159,11 @@ export function FileTreeView({
           <div className="opacity-0 group-hover:opacity-100">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid={`file-menu-${file.id}`}
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -198,6 +204,8 @@ export function FileTreeView({
           aria-expanded={isExpanded}
           aria-level={level + 1}
           aria-selected={selectedItems.has(folder.id)}
+          data-testid="folder-row"
+          data-name={folder.name}
           tabIndex={-1}
           className="flex items-center space-x-2 p-2 rounded focus:outline-none focus:ring-2 focus:ring-ring/50"
           style={{ paddingLeft: level * 16 }}

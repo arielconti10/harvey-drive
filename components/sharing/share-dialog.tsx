@@ -570,6 +570,7 @@ export function ShareDialog({ files, isOpen, onClose }: ShareDialogProps) {
                           value={shareUrlFor(share)}
                           readOnly
                           className="font-mono text-sm"
+                          data-testid="share-url"
                         />
                         <Button
                           size="sm"

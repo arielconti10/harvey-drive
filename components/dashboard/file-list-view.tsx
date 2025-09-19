@@ -112,7 +112,7 @@ export function FileListView({
       onFileDownload(file);
       return;
     }
-    window.open(file.blob_url, "_blank");
+    window.open(file.blob_url, "_blank", "noopener,noreferrer");
   };
 
   const handleSelectAllToggle = () => {
@@ -406,6 +406,8 @@ export function FileListView({
                   className={`cursor-pointer transition-colors hover:bg-accent ${
                     dragOverFolderId === folder.id ? "bg-accent/60" : ""
                   }`}
+                  data-testid="folder-row"
+                  data-name={folder.name}
                   onClick={() => onFolderOpen(folder.id)}
                   onDragOver={(event) => handleFolderDragOver(event, folder.id)}
                   onDrop={(event) => handleFolderDrop(event, folder.id)}
@@ -490,6 +492,8 @@ export function FileListView({
                   key={file.id}
                   className="hover:bg-accent"
                   draggable
+                  data-testid="file-row"
+                  data-name={file.name}
                   onDragStart={(event) => handleDragStart(event, file)}
                   onDragEnd={handleDragEnd}
                   onDoubleClick={() => handlePreview(file)}
@@ -546,7 +550,11 @@ export function FileListView({
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-testid={`file-menu-${file.id}`}
+                        >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -584,7 +592,10 @@ export function FileListView({
                           <Download className="h-4 w-4" />
                           Download
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onFileShare?.(file)}>
+                        <DropdownMenuItem
+                          onClick={() => onFileShare?.(file)}
+                          data-testid="btn-share"
+                        >
                           <Share className="h-4 w-4" />
                           Share
                         </DropdownMenuItem>

@@ -180,6 +180,7 @@ export function FileViewer({
       }}
     >
       <DialogContent
+        data-testid="viewer-dialog"
         showCloseButton={false}
         className="grid h-[92vh] w-[min(96vw,1100px)] grid-rows-[auto,1fr] gap-0 p-0 sm:max-w-none"
       >
@@ -215,6 +216,7 @@ export function FileViewer({
                 Open
               </Button>
               <Button
+                data-testid="btn-viewer-close"
                 size="sm"
                 variant="ghost"
                 onClick={onClose}

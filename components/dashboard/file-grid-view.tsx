@@ -97,7 +97,7 @@ export function FileGridView({
     if (onFileDownload) {
       onFileDownload(file);
     } else {
-      window.open(file.blob_url, "_blank");
+      window.open(file.blob_url, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -157,6 +157,8 @@ export function FileGridView({
           <Card
             key={folder.id}
             className="group cursor-pointer hover:shadow-md transition-shadow relative"
+            data-testid="folder-row"
+            data-name={folder.name}
             onClick={() => onFolderOpen(folder.id)}
             onDragOver={(event) => handleFolderDragOver(event, folder.id)}
             onDrop={(event) => handleFolderDrop(event, folder.id)}
@@ -230,6 +232,8 @@ export function FileGridView({
           <Card
             key={file.id}
             className="group cursor-pointer hover:shadow-md transition-shadow relative"
+            data-testid="file-row"
+            data-name={file.name}
             draggable
             onDragStart={(event) => handleDragStart(event, file)}
             onDragEnd={handleDragEnd}
@@ -246,7 +250,11 @@ export function FileGridView({
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      data-testid={`file-menu-${file.id}`}
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -284,7 +292,10 @@ export function FileGridView({
                       <Download className="h-4 w-4" />
                       Download
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onFileShare?.(file)}>
+                    <DropdownMenuItem
+                      onClick={() => onFileShare?.(file)}
+                      data-testid="btn-share"
+                    >
                       <Share className="h-4 w-4" />
                       Share
                     </DropdownMenuItem>

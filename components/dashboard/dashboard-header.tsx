@@ -24,12 +24,14 @@ export function DashboardHeader({
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
-        <Breadcrumb
-          currentFolderId={currentFolderId}
-          onNavigate={onNavigate}
-          onFileMove={onFileMove}
-          className="flex-1 px-0 py-0"
-        />
+        <div className="flex-1" data-testid="header-title">
+          <Breadcrumb
+            currentFolderId={currentFolderId}
+            onNavigate={onNavigate}
+            onFileMove={onFileMove}
+            className="flex-1 px-0 py-0"
+          />
+        </div>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
         </div>

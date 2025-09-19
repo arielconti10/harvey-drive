@@ -98,7 +98,10 @@ export function PdfViewerInner({ file, onError }: PDFViewerProps) {
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3"
+        data-testid="viewer-toolbar"
+      >
         <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
           {toolbarLabel}
         </div>
@@ -112,7 +115,11 @@ export function PdfViewerInner({ file, onError }: PDFViewerProps) {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm" aria-live="polite">
+          <span
+            className="text-sm"
+            aria-live="polite"
+            data-testid="pdf-page-label"
+          >
             Page {Math.min(pageNumber, numPages)} of {numPages || "?"}
           </span>
           <Button
@@ -133,6 +140,7 @@ export function PdfViewerInner({ file, onError }: PDFViewerProps) {
             variant="outline"
             onClick={handleZoomOut}
             aria-label="Zoom out"
+            data-testid="btn-zoom-out"
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
@@ -144,6 +152,7 @@ export function PdfViewerInner({ file, onError }: PDFViewerProps) {
             variant="outline"
             onClick={handleZoomIn}
             aria-label="Zoom in"
+            data-testid="btn-zoom-in"
           >
             <ZoomIn className="h-4 w-4" />
           </Button>

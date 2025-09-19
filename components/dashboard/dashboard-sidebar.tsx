@@ -244,6 +244,8 @@ export function DashboardSidebar({
                       key={room.id}
                       onClick={() => setCurrentDataroomId(room.id)}
                       className="gap-2 p-2"
+                      data-testid="dataroom-row"
+                      data-name={room.name}
                     >
                       <div className="flex size-6 items-center justify-center rounded-md border">
                         <HardDrive className="size-3.5" />
@@ -291,6 +293,7 @@ export function DashboardSidebar({
                   <DropdownMenuItem
                     className="gap-2 p-2"
                     onClick={handleCreateDataroom}
+                    data-testid="btn-new-dataroom"
                   >
                     <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                       <Plus className="size-4" />
@@ -307,7 +310,11 @@ export function DashboardSidebar({
           <p className="text-sm text-muted-foreground mb-3">
             Create a dataroom to start organizing your files.
           </p>
-          <Button onClick={handleCreateDataroom} className="w-full">
+          <Button
+            onClick={handleCreateDataroom}
+            className="w-full"
+            data-testid="btn-new-dataroom"
+          >
             <Plus className="h-4 w-4" />
             <span>Create dataroom</span>
           </Button>
