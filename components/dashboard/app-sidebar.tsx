@@ -21,7 +21,6 @@ export function AppSidebar({ user, profile }: AppSidebarProps) {
     if (!pathname) return "files";
     if (pathname.startsWith("/dashboard/starred")) return "starred";
     if (pathname.startsWith("/dashboard/shared")) return "shared";
-    if (pathname.startsWith("/dashboard/trash")) return "trash";
     return "files";
   }, [pathname]);
 

@@ -55,7 +55,7 @@ export type ViewMode = "grid" | "list" | "tree";
 export type SortBy = "name" | "size" | "date" | "type";
 export type SortOrder = "asc" | "desc";
 
-export type DashboardView = "files" | "starred" | "shared" | "trash";
+export type DashboardView = "files" | "starred" | "shared";
 
 export interface SearchFilters {
   query: string;

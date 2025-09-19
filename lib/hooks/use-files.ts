@@ -46,7 +46,7 @@ export function useFiles({
   );
 
   const fetchFilesList = async (): Promise<FileItem[]> => {
-    if (view === "shared" || view === "trash") {
+    if (view === "shared") {
       return [];
     }
     const params = new URLSearchParams();

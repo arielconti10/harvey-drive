@@ -29,7 +29,6 @@ interface BreadcrumbItem {
 const SPECIAL_VIEWS: Record<string, string> = {
   starred: "Starred",
   shared: "Shared",
-  trash: "Trash",
 };
 
 export function Breadcrumb({

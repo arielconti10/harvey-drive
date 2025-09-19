@@ -9,12 +9,12 @@ import type {
   SortBy,
   SortOrder,
   SearchFilters,
-} from "@/lib/types";
+} from "../../lib/types";
 import { FileGridView } from "./file-grid-view";
 import { FileListView } from "./file-list-view";
 import { HtTreeView } from "./ht-tree-view";
 import { EmptyState } from "./empty-state";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "../ui/loading-spinner";
 import { useDropzone } from "react-dropzone";
 
 interface FileExplorerProps {
@@ -124,28 +124,56 @@ export function FileExplorer({
 
     // Apply size filter
     if (searchFilters.sizeRange) {
+      const { min, max } = searchFilters.sizeRange;
       filteredFiles = filteredFiles.filter((file) => {
-        const size = file.size || 0;
-        return (
-          size >= searchFilters.sizeRange!.min &&
-          size <= searchFilters.sizeRange!.max
-        );
+        const size = file.size ?? 0;
+
+        if (typeof min === "number" && size < min) {
+          return false;
+        }
+
+        if (typeof max === "number" && size > max) {
+          return false;
+        }
+
+        return true;
       });
     }
 
     // Apply date range filter
     if (searchFilters.dateRange) {
-      const fromDate = searchFilters.dateRange.from;
-      const toDate = searchFilters.dateRange.to;
+      const normalizeDate = (value?: string | Date | null) => {
+        if (!value) return undefined;
+        return value instanceof Date ? value : new Date(value);
+      };
+
+      const fromDate = normalizeDate(searchFilters.dateRange.from);
+      const toDate = normalizeDate(searchFilters.dateRange.to);
 
       filteredFiles = filteredFiles.filter((file) => {
         const fileDate = new Date(file.created_at);
-        return fileDate >= fromDate && fileDate <= toDate;
+        if (fromDate && fileDate < fromDate) {
+          return false;
+        }
+
+        if (toDate && fileDate > toDate) {
+          return false;
+        }
+
+        return true;
       });
 
       filteredFolders = filteredFolders.filter((folder) => {
         const folderDate = new Date(folder.created_at);
-        return folderDate >= fromDate && folderDate <= toDate;
+        if (fromDate && folderDate < fromDate) {
+          return false;
+        }
+
+        if (toDate && folderDate > toDate) {
+          return false;
+        }
+
+        return true;
       });
     }
 

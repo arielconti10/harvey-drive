@@ -187,11 +187,6 @@ export function DashboardSidebar({
         label: "Shared",
         view: "shared" as const,
       },
-      {
-        icon: Trash2,
-        label: "Trash",
-        view: "trash" as const,
-      },
     ]
   ).map((item) => ({
     ...item,
