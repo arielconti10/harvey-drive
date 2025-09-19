@@ -47,7 +47,10 @@ export function useFiles({
 
   const fetchFilesList = async (): Promise<FileItem[]> => {
     if (view === "shared") {
-      return [];
+      const res = await fetch("/api/files/shared");
+      if (!res.ok) throw new Error("Failed to fetch shared files");
+      const data = await res.json();
+      return data.files || [];
     }
     const params = new URLSearchParams();
     if (view === "starred") {

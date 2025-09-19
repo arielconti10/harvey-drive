@@ -29,7 +29,13 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { AdvancedSearch } from "./advanced-search";
-import type { ViewMode, SortBy, SortOrder, SearchFilters } from "@/lib/types";
+import type {
+  ViewMode,
+  SortBy,
+  SortOrder,
+  SearchFilters,
+  DashboardView,
+} from "@/lib/types";
 import { ACCEPT_FILE_TYPES_ATTRIBUTE } from "@/lib/constants/files";
 import { format } from "date-fns";
 
@@ -49,6 +55,7 @@ interface ExplorerControlsProps {
   defaultSortBy: SortBy;
   defaultSortOrder: SortOrder;
   onReset: () => void;
+  view?: DashboardView;
 }
 
 export function ExplorerControls({
@@ -67,6 +74,7 @@ export function ExplorerControls({
   defaultSortBy,
   defaultSortOrder,
   onReset,
+  view = "files",
 }: ExplorerControlsProps) {
   const [folderName, setFolderName] = useState("");
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
@@ -159,6 +167,8 @@ export function ExplorerControls({
     tree: "Tree",
   };
 
+  const showCreationMenu = view === "files";
+
   return (
     <div className="border-b px-4 py-3 sm:px-6 sm:py-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -241,49 +251,58 @@ export function ExplorerControls({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm">
-                <MoreVertical />
-                New
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                disabled={!canCreate}
-                onClick={() => canCreate && fileInputRef.current?.click()}
-              >
-                <Upload className="h-4 w-4" />
-                Upload Files
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!canCreate}
-                onClick={() => canCreate && onShowUploadZone()}
-              >
-                <Upload className="h-4 w-4" />
-                Open Upload Zone
-              </DropdownMenuItem>
+          {showCreationMenu ? (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm">
+                    <MoreVertical />
+                    New
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    disabled={!canCreate}
+                    onClick={() => canCreate && fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Files
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!canCreate}
+                    onClick={() => canCreate && onShowUploadZone()}
+                  >
+                    <Upload className="h-4 w-4" />
+                    Open Upload Zone
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!canCreate}
+                    onClick={() => canCreate && setCreateFolderOpen(true)}
+                    data-testid="btn-new-folder"
+                  >
+                    <FolderPlus className="h-4 w-4" />
+                    New Folder
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-              <DropdownMenuItem
-                disabled={!canCreate}
-                onClick={() => canCreate && setCreateFolderOpen(true)}
-                data-testid="btn-new-folder"
-              >
-                <FolderPlus className="h-4 w-4" />
-                New Folder
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept={ACCEPT_FILE_TYPES_ATTRIBUTE}
-            onChange={handleFileUpload}
-            className="hidden"
-            data-testid="input-upload"
-          />
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={ACCEPT_FILE_TYPES_ATTRIBUTE}
+                onChange={handleFileUpload}
+                className="hidden"
+                data-testid="input-upload"
+              />
+            </>
+          ) : (
+            <span className="text-xs text-muted-foreground" aria-live="polite">
+              {view === "shared"
+                ? "Shared view lists files you've shared or received. Manage share links from the file menu."
+                : "Starred view is read-only. Use the file menu to add or remove stars."}
+            </span>
+          )}
         </div>
       </div>
 

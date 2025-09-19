@@ -121,9 +121,17 @@ export function DashboardSidebar({
     }
 
     if (!hasLoadedRoomsRef.current && !showCreateDialog) {
+      hasLoadedRoomsRef.current = true;
       setShowCreateDialog(true);
     }
   }, [loading, sortedRooms, showCreateDialog]);
+
+  const handleCreateDialogOpenChange = (open: boolean) => {
+    if (!open && sortedRooms.length === 0) {
+      hasLoadedRoomsRef.current = true;
+    }
+    setShowCreateDialog(open);
+  };
 
   const handleDeleteDataroom = async () => {
     if (!roomToDelete) return;
@@ -322,7 +330,7 @@ export function DashboardSidebar({
       )}
       <DataroomNameDialog
         open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
+        onOpenChange={handleCreateDialogOpenChange}
         title="Create dataroom"
         description="Datarooms group folders and files for a workspace."
         confirmLabel="Create"

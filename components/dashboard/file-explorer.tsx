@@ -26,6 +26,7 @@ interface FileExplorerProps {
   sortBy: SortBy;
   sortOrder: SortOrder;
   searchFilters: SearchFilters;
+  view?: import("../../lib/types").DashboardView;
   selectedItems: Set<string>;
   onItemSelect: (itemId: string, selected: boolean) => void;
   onSelectAll: () => void;
@@ -58,6 +59,7 @@ export function FileExplorer({
   sortBy,
   sortOrder,
   searchFilters,
+  view,
   selectedItems,
   onItemSelect,
   onSelectAll,
@@ -362,6 +364,7 @@ export function FileExplorer({
       onUpload={onUpload}
       onCreateFolder={onCreateFolder}
       canCreate={canCreate}
+      view={view}
     />
   );
 

@@ -379,6 +379,7 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
         defaultSortBy={defaultSortBy}
         defaultSortOrder={defaultSortOrder}
         onReset={handleResetFilters}
+        view={view}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -391,6 +392,7 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
           sortBy={sortBy}
           sortOrder={sortOrder}
           searchFilters={searchFilters}
+          view={view}
           selectedItems={selectedItems}
           onItemSelect={handleItemSelect}
           onSelectAll={handleSelectAll}

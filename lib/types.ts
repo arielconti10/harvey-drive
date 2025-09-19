@@ -11,6 +11,9 @@ export interface FileItem {
   is_starred: boolean;
   created_at: string;
   updated_at: string;
+  shared_permission?: "view" | "edit";
+  shared_via?: "sent" | "received";
+  shared_expires_at?: string | null;
 }
 
 export interface FolderItem {

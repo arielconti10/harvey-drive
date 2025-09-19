@@ -199,22 +199,30 @@ export function FileListView({
           )}
         </div>
         <div className="space-y-3">
-          {folders.map((folder) => (
-            <div
-              key={folder.id}
-              className={`flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm transition-colors ${
-                dragOverFolderId === folder.id ? "ring-1 ring-ring" : ""
-              }`}
-              onClick={() => onFolderOpen(folder.id)}
-            >
-              <Checkbox
-                checked={selectedItems.has(folder.id)}
-                onCheckedChange={(checked) =>
-                  onItemSelect(folder.id, !!checked)
-                }
-                onClick={(event) => event.stopPropagation()}
-                className="mt-1"
-              />
+          {folders.map((folder) => {
+            const isSelected = selectedItems.has(folder.id);
+            const isDragTarget = dragOverFolderId === folder.id;
+            return (
+              <div
+                key={folder.id}
+                className={cn(
+                  "group flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm transition-colors",
+                  isDragTarget && "ring-1 ring-ring",
+                  isSelected && "border-primary/50 bg-primary/5 ring-1 ring-primary/30"
+                )}
+                onClick={() => onFolderOpen(folder.id)}
+                aria-selected={isSelected}
+                data-testid="folder-row"
+                data-name={folder.name}
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={(checked) =>
+                    onItemSelect(folder.id, !!checked)
+                  }
+                  onClick={(event) => event.stopPropagation()}
+                  className="mt-1"
+                />
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-start gap-2">
                   <Folder className="h-5 w-5 shrink-0 text-foreground" />
@@ -226,8 +234,9 @@ export function FileListView({
                         onClick={(event) => event.stopPropagation()}
                         onBlur={() => submitRename(folder.id, "folder")}
                         onKeyDown={(event) => {
-                          if (event.key === "Enter")
+                          if (event.key === "Enter") {
                             submitRename(folder.id, "folder");
+                          }
                           if (event.key === "Escape") setRenamingId(null);
                         }}
                         autoFocus
@@ -269,24 +278,35 @@ export function FileListView({
                   </DropdownMenu>
                 </div>
               </div>
-            </div>
-          ))}
+              </div>
+            );
+          })}
 
-          {files.map((file) => (
-            <div
-              key={file.id}
-              className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm"
-              onClick={() =>
-                canPreview(file.mime_type, file.name) && handlePreview(file)
-              }
-            >
-              <Checkbox
-                checked={selectedItems.has(file.id)}
-                onCheckedChange={(checked) => onItemSelect(file.id, !!checked)}
-                onClick={(event) => event.stopPropagation()}
-                className="mt-1"
-              />
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
+          {files.map((file) => {
+            const isSelected = selectedItems.has(file.id);
+            return (
+              <div
+                key={file.id}
+                className={cn(
+                  "group flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm transition-colors",
+                  isSelected && "border-primary/50 bg-primary/5 ring-1 ring-primary/30"
+                )}
+                onClick={() =>
+                  canPreview(file.mime_type, file.name) && handlePreview(file)
+                }
+                aria-selected={isSelected}
+                data-testid="file-row"
+                data-name={file.name}
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={(checked) =>
+                    onItemSelect(file.id, !!checked)
+                  }
+                  onClick={(event) => event.stopPropagation()}
+                  className="mt-1"
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-start gap-3">
                   <span className="text-xl" aria-hidden="true">
                     {getFileIcon(file.mime_type, file.name)}
@@ -299,8 +319,9 @@ export function FileListView({
                         onClick={(event) => event.stopPropagation()}
                         onBlur={() => submitRename(file.id, "file")}
                         onKeyDown={(event) => {
-                          if (event.key === "Enter")
+                          if (event.key === "Enter") {
                             submitRename(file.id, "file");
+                          }
                           if (event.key === "Escape") setRenamingId(null);
                         }}
                         autoFocus
@@ -378,7 +399,8 @@ export function FileListView({
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       </div>
 
@@ -400,24 +422,32 @@ export function FileListView({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {folders.map((folder) => (
-                <TableRow
-                  key={folder.id}
-                  className={`cursor-pointer transition-colors hover:bg-accent ${
-                    dragOverFolderId === folder.id ? "bg-accent/60" : ""
-                  }`}
-                  data-testid="folder-row"
-                  data-name={folder.name}
-                  onClick={() => onFolderOpen(folder.id)}
-                  onDragOver={(event) => handleFolderDragOver(event, folder.id)}
-                  onDrop={(event) => handleFolderDrop(event, folder.id)}
-                  onDragLeave={(event) =>
-                    handleFolderDragLeave(event, folder.id)
-                  }
-                >
+              {folders.map((folder) => {
+                const isSelected = selectedItems.has(folder.id);
+                const isDragTarget = dragOverFolderId === folder.id;
+                return (
+                  <TableRow
+                    key={folder.id}
+                    className={cn(
+                      "cursor-pointer transition-colors hover:bg-accent",
+                      isDragTarget && "bg-accent/60",
+                      isSelected && "bg-primary/5"
+                    )}
+                    data-testid="folder-row"
+                    data-name={folder.name}
+                    aria-selected={isSelected}
+                    onClick={() => onFolderOpen(folder.id)}
+                    onDragOver={(event) =>
+                      handleFolderDragOver(event, folder.id)
+                    }
+                    onDrop={(event) => handleFolderDrop(event, folder.id)}
+                    onDragLeave={(event) =>
+                      handleFolderDragLeave(event, folder.id)
+                    }
+                  >
                   <TableCell>
                     <Checkbox
-                      checked={selectedItems.has(folder.id)}
+                      checked={isSelected}
                       onCheckedChange={(checked) =>
                         onItemSelect(folder.id, !!checked)
                       }
@@ -428,17 +458,18 @@ export function FileListView({
                     <div className="flex items-center space-x-3">
                       <Folder className="h-5 w-5 text-foreground" />
                       {renamingId === folder.id ? (
-                      <Input
-                        value={renameValue}
-                        onChange={(event) =>
-                          setRenameValue(event.target.value)
-                        }
-                        onClick={(event) => event.stopPropagation()}
-                        onDoubleClick={(event) => event.stopPropagation()}
-                        onBlur={() => submitRename(folder.id, "folder")}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter")
-                            submitRename(folder.id, "folder");
+                        <Input
+                          value={renameValue}
+                          onChange={(event) =>
+                            setRenameValue(event.target.value)
+                          }
+                          onClick={(event) => event.stopPropagation()}
+                          onDoubleClick={(event) => event.stopPropagation()}
+                          onBlur={() => submitRename(folder.id, "folder")}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              submitRename(folder.id, "folder");
+                            }
                             if (event.key === "Escape") setRenamingId(null);
                           }}
                           autoFocus
@@ -485,22 +516,29 @@ export function FileListView({
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+              })}
 
-              {files.map((file) => (
-                <TableRow
-                  key={file.id}
-                  className="hover:bg-accent"
-                  draggable
-                  data-testid="file-row"
-                  data-name={file.name}
-                  onDragStart={(event) => handleDragStart(event, file)}
-                  onDragEnd={handleDragEnd}
-                  onDoubleClick={() => handlePreview(file)}
-                >
+              {files.map((file) => {
+                const isSelected = selectedItems.has(file.id);
+                return (
+                  <TableRow
+                    key={file.id}
+                    className={cn(
+                      "hover:bg-accent",
+                      isSelected && "bg-primary/5"
+                    )}
+                    draggable
+                    data-testid="file-row"
+                    data-name={file.name}
+                    aria-selected={isSelected}
+                    onDragStart={(event) => handleDragStart(event, file)}
+                    onDragEnd={handleDragEnd}
+                    onDoubleClick={() => handlePreview(file)}
+                  >
                   <TableCell>
                     <Checkbox
-                      checked={selectedItems.has(file.id)}
+                      checked={isSelected}
                       onCheckedChange={(checked) =>
                         onItemSelect(file.id, !!checked)
                       }
@@ -512,17 +550,18 @@ export function FileListView({
                         {getFileIcon(file.mime_type, file.name)}
                       </span>
                       {renamingId === file.id ? (
-                      <Input
-                        value={renameValue}
-                        onChange={(event) =>
-                          setRenameValue(event.target.value)
-                        }
-                        onClick={(event) => event.stopPropagation()}
-                        onDoubleClick={(event) => event.stopPropagation()}
-                        onBlur={() => submitRename(file.id, "file")}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter")
-                            submitRename(file.id, "file");
+                        <Input
+                          value={renameValue}
+                          onChange={(event) =>
+                            setRenameValue(event.target.value)
+                          }
+                          onClick={(event) => event.stopPropagation()}
+                          onDoubleClick={(event) => event.stopPropagation()}
+                          onBlur={() => submitRename(file.id, "file")}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              submitRename(file.id, "file");
+                            }
                             if (event.key === "Escape") setRenamingId(null);
                           }}
                           autoFocus
@@ -607,7 +646,8 @@ export function FileListView({
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+              })}
             </TableBody>
           </Table>
         </div>

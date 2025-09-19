@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Check, Copy, Link2, Loader2, Trash2 } from "lucide-react";
 import type { FileItem } from "@/lib/types";
 import { format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ShareDialogProps {
   files: FileItem[];
@@ -39,6 +40,28 @@ export function ShareDialog({ files, isOpen, onClose }: ShareDialogProps) {
   const [isFetching, setIsFetching] = useState(false);
   const [linkPending, setLinkPending] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const invalidateSharedFiles = useCallback(() => {
+    queryClient.invalidateQueries({
+      predicate: (query) => {
+        if (!Array.isArray(query.queryKey) || query.queryKey[0] !== "files") {
+          return false;
+        }
+
+        const meta = query.queryKey[1];
+        if (meta && typeof meta === "object") {
+          try {
+            const view = (meta as { view?: string }).view;
+            return view === "shared";
+          } catch {
+            return false;
+          }
+        }
+        return false;
+      },
+    });
+  }, [queryClient]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -113,6 +136,7 @@ export function ShareDialog({ files, isOpen, onClose }: ShareDialogProps) {
       }
 
       await fetchShares();
+      invalidateSharedFiles();
     } catch (error) {
       console.error(error);
     } finally {
@@ -134,6 +158,7 @@ export function ShareDialog({ files, isOpen, onClose }: ShareDialogProps) {
         throw new Error(payload?.error || "Failed to delete share link");
       }
       await fetchShares();
+      invalidateSharedFiles();
     } catch (error) {
       console.error(error);
     }

@@ -153,25 +153,34 @@ export function FileGridView({
     <div className="p-4 sm:p-6 overflow-hidden">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
         {/* Folders */}
-        {folders.map((folder) => (
-          <Card
-            key={folder.id}
-            className="group cursor-pointer hover:shadow-md transition-shadow relative"
-            data-testid="folder-row"
-            data-name={folder.name}
-            onClick={() => onFolderOpen(folder.id)}
-            onDragOver={(event) => handleFolderDragOver(event, folder.id)}
-            onDrop={(event) => handleFolderDrop(event, folder.id)}
-            onDragLeave={(event) => handleFolderDragLeave(event, folder.id)}
-          >
-            <CardContent
-              className={`p-4 text-center transition-colors ${
-                dragOverFolderId === folder.id ? "border border-ring" : ""
-              }`}
+        {folders.map((folder) => {
+          const isSelected = selectedItems.has(folder.id);
+          const isDragTarget = dragOverFolderId === folder.id;
+          return (
+            <Card
+              key={folder.id}
+              className={cn(
+                "group relative cursor-pointer transition-shadow",
+                isSelected && "border-primary/50 bg-primary/5 shadow-md",
+                !isSelected && "hover:shadow-md"
+              )}
+              data-testid="folder-row"
+              data-name={folder.name}
+              aria-selected={isSelected}
+              onClick={() => onFolderOpen(folder.id)}
+              onDragOver={(event) => handleFolderDragOver(event, folder.id)}
+              onDrop={(event) => handleFolderDrop(event, folder.id)}
+              onDragLeave={(event) => handleFolderDragLeave(event, folder.id)}
             >
+              <CardContent
+                className={cn(
+                  "p-4 text-center transition-colors",
+                  isDragTarget && "border border-ring"
+                )}
+              >
               <div className="absolute top-2 left-2">
                 <Checkbox
-                  checked={selectedItems.has(folder.id)}
+                  checked={isSelected}
                   onCheckedChange={(checked) =>
                     onItemSelect(folder.id, !!checked)
                   }
@@ -224,27 +233,37 @@ export function FileGridView({
                 {format(new Date(folder.created_at), "MMM d, yyyy")}
               </p>
             </CardContent>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
 
         {/* Files */}
-        {files.map((file) => (
-          <Card
-            key={file.id}
-            className="group cursor-pointer hover:shadow-md transition-shadow relative"
-            data-testid="file-row"
-            data-name={file.name}
-            draggable
-            onDragStart={(event) => handleDragStart(event, file)}
-            onDragEnd={handleDragEnd}
-          >
-            <CardContent className="p-4 text-center">
+        {files.map((file) => {
+          const isSelected = selectedItems.has(file.id);
+          return (
+            <Card
+              key={file.id}
+              className={cn(
+                "group relative cursor-pointer transition-shadow",
+                isSelected && "border-primary/50 bg-primary/5 shadow-md",
+                !isSelected && "hover:shadow-md"
+              )}
+              data-testid="file-row"
+              data-name={file.name}
+              aria-selected={isSelected}
+              draggable
+              onDragStart={(event) => handleDragStart(event, file)}
+              onDragEnd={handleDragEnd}
+              onDoubleClick={() => handlePreview(file)}
+            >
+              <CardContent className="p-4 text-center">
               <div className="absolute top-2 left-2">
                 <Checkbox
-                  checked={selectedItems.has(file.id)}
+                  checked={isSelected}
                   onCheckedChange={(checked) =>
                     onItemSelect(file.id, !!checked)
                   }
+                  onClick={(event) => event.stopPropagation()}
                 />
               </div>
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -348,7 +367,8 @@ export function FileGridView({
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
