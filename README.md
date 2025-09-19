@@ -155,5 +155,3 @@ file_shares(id, file_id, shared_with_id, shared_by_id, permission, share_token, 
 | `pnpm start` | Run the production build (port 3000) |
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | `tsc --noEmit` |
-
-> Run **`pnpm typecheck && pnpm lint && pnpm build`** before submitting.
