@@ -51,13 +51,15 @@ export default function SignUpPage() {
     form.clearErrors("root");
 
     try {
+      const postSignUpRedirect =
+        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+        `${window.location.origin}/auth/callback?next=/dashboard`;
+
       const { error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/dashboard`,
+          emailRedirectTo: postSignUpRedirect,
           data: {
             full_name: values.fullName,
           },

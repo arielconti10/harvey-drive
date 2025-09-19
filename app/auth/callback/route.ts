@@ -8,6 +8,10 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createServerClient()
+    const { data: existingSession } = await supabase.auth.getUser()
+    if (existingSession?.user) {
+      await supabase.auth.signOut()
+    }
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       const forwardedHost = request.headers.get("x-forwarded-host")
