@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DashboardView, FileItem } from "@/lib/types";
+import type { DashboardView, FileItem, SortBy, SortOrder } from "@/lib/types";
 import { DashboardHeader } from "./dashboard-header";
 import { FileExplorer } from "./file-explorer";
 import { FileUploadZone } from "./file-upload-zone";
@@ -17,6 +17,8 @@ import { ExplorerControls } from "./explorer-controls";
 import { Progress } from "@/components/ui/progress";
 
 export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
+  const defaultSortBy: SortBy = "date";
+  const defaultSortOrder: SortOrder = "desc";
   const currentFolderId = useUiStore((s) => s.currentFolderId);
   const currentDataroomId = useUiStore((s) => s.currentDataroomId);
   const setCurrentFolderId = useUiStore((s) => s.setCurrentFolderId);
@@ -88,6 +90,19 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
     setShowUploadProgress(false);
     setUploadProgress({ active: false, total: 0, completed: 0 });
   }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setSearchFilters({
+      query: "",
+      fileTypes: [],
+      sizeRange: null,
+      dateRange: null,
+      owner: null,
+      shared: null,
+    });
+    setSortBy(defaultSortBy);
+    setSortOrder(defaultSortOrder);
+  }, [setSearchFilters, setSortBy, setSortOrder, defaultSortBy, defaultSortOrder]);
 
   useEffect(() => {
     return () => {
@@ -353,6 +368,7 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
         onSearchFiltersChange={setSearchFilters}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
+        sortBy={sortBy}
         sortOrder={sortOrder}
         onSortChange={setSortBy}
         onSortOrderChange={setSortOrder}
@@ -360,6 +376,9 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
         onCreateFolder={handleCreateFolder}
         onShowUploadZone={() => setShowUploadZone(true)}
         canCreate={canCreate}
+        defaultSortBy={defaultSortBy}
+        defaultSortOrder={defaultSortOrder}
+        onReset={handleResetFilters}
       />
 
       <div className="flex-1 overflow-hidden">

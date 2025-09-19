@@ -50,8 +50,9 @@ export default async function SharedFilePage({ params }: SharedFilePageProps) {
           mime_type: shareRecord.mime_type,
           blob_url: shareRecord.blob_url,
           folder_id: shareRecord.folder_id,
-          dataroom_id: shareRecord.dataroom_id,
+          dataroom_id: shareRecord.dataroom_id ?? undefined,
           is_public: shareRecord.is_public,
+          is_starred: false,
           created_at: shareRecord.file_created_at,
           updated_at: shareRecord.file_updated_at,
           profiles: {

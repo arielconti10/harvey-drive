@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { CheckedState } from "@radix-ui/react-checkbox";
 import {
   Table,
   TableBody,
@@ -106,6 +107,11 @@ export function FileListView({
   const allSelected =
     allItems.length > 0 && allItems.every((item) => selectedItems.has(item.id));
   const someSelected = allItems.some((item) => selectedItems.has(item.id));
+  const headerCheckboxState: CheckedState = allSelected
+    ? true
+    : someSelected
+    ? "indeterminate"
+    : false;
 
   const handleDownload = (file: FileItem) => {
     if (onFileDownload) {
@@ -174,15 +180,12 @@ export function FileListView({
   return (
     <div className="p-4 sm:p-6 overflow-hidden">
       <div className="sm:hidden">
-        <div className="flex items-center justify-between pb-3">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={allSelected}
-              ref={(el) => {
-                if (el) el.indeterminate = someSelected && !allSelected;
-              }}
-              onCheckedChange={handleSelectAllToggle}
-            />
+          <div className="flex items-center justify-between pb-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={headerCheckboxState}
+                onCheckedChange={handleSelectAllToggle}
+              />
             <span className="text-sm text-muted-foreground">
               {selectedItems.size > 0
                 ? `${selectedItems.size} selected`
@@ -386,10 +389,7 @@ export function FileListView({
               <TableRow>
                 <TableHead className="w-12">
                   <Checkbox
-                    checked={allSelected}
-                    ref={(el) => {
-                      if (el) el.indeterminate = someSelected && !allSelected;
-                    }}
+                    checked={headerCheckboxState}
                     onCheckedChange={handleSelectAllToggle}
                   />
                 </TableHead>

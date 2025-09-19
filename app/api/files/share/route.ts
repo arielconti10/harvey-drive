@@ -24,14 +24,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { fileId, sharedWithEmail, permission, expiresAt, createPublicLink } = await request.json()
+    const { fileId, expiresAt, createPublicLink } = await request.json()
 
     if (!fileId) {
       return NextResponse.json({ error: "File ID is required" }, { status: 400 })
     }
 
+    if (!createPublicLink) {
+      return NextResponse.json({ error: "Only public link sharing is supported" }, { status: 400 })
+    }
+
     // Verify file ownership
-    const { data: file, error: fileError } = await supabase.from("files").select("owner_id").eq("id", fileId).single()
+    const { data: file, error: fileError } = await supabase
+      .from("files")
+      .select("owner_id")
+      .eq("id", fileId)
+      .single()
 
     if (fileError || !file) {
       return NextResponse.json({ error: "File not found" }, { status: 404 })
@@ -41,7 +49,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    const requestedPermission = permission === "edit" || permission === "write" ? "edit" : "view"
     const parsedExpires = expiresAt ? new Date(expiresAt) : null
     const expiresIso = parsedExpires && !Number.isNaN(parsedExpires.valueOf()) ? parsedExpires.toISOString() : null
 
@@ -49,69 +56,26 @@ export async function POST(request: NextRequest) {
       file_id: fileId,
       shared_by_id: user.id,
       expires_at: expiresIso,
+      share_token: nanoid(32),
     }
+    const { data: share, error: insertError } = await supabase
+      .from("file_shares")
+      .insert({ ...basePayload, permission: "view" })
+      .select("id, share_token, permission, expires_at")
+      .single()
 
-    if (createPublicLink) {
-      // Create public share link
-      basePayload.share_token = nanoid(32)
-    } else if (sharedWithEmail) {
-      // Share with specific user
-      const { data: sharedUser } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", sharedWithEmail)
-        .single()
-
-      if (!sharedUser) {
-        // Respond generically to avoid leaking which emails are registered.
-        return NextResponse.json({ success: true })
-      }
-
-      basePayload.shared_with_id = sharedUser.id
-    } else {
-      return NextResponse.json({ error: "Either email or public link option is required" }, { status: 400 })
-    }
-
-    const permissionCandidates = requestedPermission === "edit" ? (["edit", "write"] as const) : (["view", "read"] as const)
-    type ShareRow = {
-      id: string
-      share_token: string | null
-      permission: ShareInsert["permission"]
-      expires_at: string | null
-    }
-
-    let share: ShareRow | null = null
-    let lastError: unknown = null
-
-    for (const candidate of permissionCandidates) {
-      const { data, error } = await supabase
-        .from("file_shares")
-        .insert({ ...basePayload, permission: candidate })
-        .select("id, share_token, permission, expires_at")
-        .single<ShareRow>()
-
-      if (!error && data) {
-        share = data
-        break
-      }
-
-      lastError = error
-    }
-
-    if (!share) {
-      console.error("Share creation error:", lastError)
+    if (insertError || !share || !share.share_token) {
+      console.error("Share creation error:", insertError)
       return NextResponse.json({ error: "Failed to create share" }, { status: 500 })
     }
 
-    const normalizedPermission = share.permission === "write" ? "edit" : share.permission === "read" ? "view" : share.permission
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
     return NextResponse.json({
       id: share.id,
       shareToken: share.share_token,
-      shareUrl: share.share_token
-        ? `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/shared/${share.share_token}`
-        : null,
-      permission: normalizedPermission,
+      shareUrl: `${appUrl.replace(/\/$/, "")}/shared/${share.share_token}`,
+      permission: "view",
       expiresAt: share.expires_at,
     })
 

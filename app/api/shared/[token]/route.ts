@@ -20,10 +20,13 @@ type PublicShareRow = {
   owner_email: string | null
 }
 
-export async function GET(request: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ token: string }> }
+) {
   try {
     const supabase = await createClient()
-    const { token } = params
+    const { token } = await params
 
     if (!token) {
       return NextResponse.json({ error: "Share token is required" }, { status: 400 })

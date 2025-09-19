@@ -211,5 +211,3 @@ export function PdfViewerInner({ file, onError }: PDFViewerProps) {
     </div>
   );
 }
-
-export type { PDFViewerProps };
