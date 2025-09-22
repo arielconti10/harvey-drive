@@ -3,6 +3,12 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DashboardView, FileItem, FolderItem } from "@/lib/types";
+import {
+  buildFilesQueryKey,
+  buildFoldersQueryKey,
+  fetchFilesList,
+  fetchFoldersList,
+} from "@/lib/api/file-queries";
 
 interface UseFilesParams {
   folderId?: string | null;
@@ -22,86 +28,47 @@ export function useFiles({
   const effectiveFolderId = view === "files" ? folderId : null;
 
   const filesKey = useMemo(
-    () => [
-      "files",
-      {
-        folderId: effectiveFolderId || null,
-        dataroomId: dataroomId || null,
+    () =>
+      buildFilesQueryKey({
+        folderId: effectiveFolderId,
+        dataroomId,
         search: normalizedSearch,
         view,
-      },
-    ],
+      }),
     [effectiveFolderId, dataroomId, normalizedSearch, view]
   );
+
   const foldersKey = useMemo(
-    () => [
-      "folders",
-      {
-        parentId: effectiveFolderId || null,
-        dataroomId: dataroomId || null,
+    () =>
+      buildFoldersQueryKey({
+        parentId: effectiveFolderId,
+        dataroomId,
         view,
-      },
-    ],
+      }),
     [effectiveFolderId, dataroomId, view]
   );
 
-  const fetchFilesList = async (): Promise<FileItem[]> => {
-    if (view === "shared") {
-      const res = await fetch("/api/files/shared");
-      if (!res.ok) throw new Error("Failed to fetch shared files");
-      const data = await res.json();
-      return data.files || [];
-    }
-    const params = new URLSearchParams();
-    if (view === "starred") {
-      params.append("view", "starred");
-    } else if (effectiveFolderId) {
-      params.append("folderId", effectiveFolderId);
-    }
-    if (dataroomId && view !== "starred") {
-      params.append("dataroomId", dataroomId);
-    }
-    if (normalizedSearch) params.append("search", normalizedSearch);
-    const queryString = params.toString();
-    const res = await fetch(
-      queryString ? `/api/files/list?${queryString}` : "/api/files/list"
-    );
-    if (!res.ok) throw new Error("Failed to fetch files");
-    const data = await res.json();
-    return data.files || [];
-  };
-
-  const fetchFoldersList = async (): Promise<FolderItem[]> => {
-    if (view !== "files") {
-      return [];
-    }
-    const searchParams = new URLSearchParams();
-    if (effectiveFolderId) {
-      searchParams.append("parentId", effectiveFolderId);
-    }
-    if (dataroomId) {
-      searchParams.append("dataroomId", dataroomId);
-    }
-    const queryString = searchParams.toString();
-    const url = queryString
-      ? `/api/folders/list?${queryString}`
-      : "/api/folders/list";
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Failed to fetch folders");
-    const data = await res.json();
-    return data.folders || [];
-  };
-
   const filesQuery = useQuery({
     queryKey: filesKey,
-    queryFn: fetchFilesList,
+    queryFn: () =>
+      fetchFilesList({
+        folderId: effectiveFolderId,
+        dataroomId,
+        search: normalizedSearch,
+        view,
+      }),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 
   const foldersQuery = useQuery({
     queryKey: foldersKey,
-    queryFn: fetchFoldersList,
+    queryFn: () =>
+      fetchFoldersList({
+        parentId: effectiveFolderId,
+        dataroomId,
+        view,
+      }),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     enabled: view === "files",

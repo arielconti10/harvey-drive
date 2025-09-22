@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   asyncDataLoaderFeature,
   hotkeysCoreFeature,
+  renamingFeature,
   selectionFeature,
 } from "@headless-tree/core";
 import { useTree } from "@headless-tree/react";
@@ -24,7 +25,7 @@ import {
   ChevronRight,
   Pencil,
 } from "lucide-react";
-import type { FileItem, FolderItem } from "@/lib/types";
+import type { DashboardView, FileItem, FolderItem } from "@/lib/types";
 import { format } from "date-fns";
 import {
   formatFileSize,
@@ -36,6 +37,13 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  buildFilesQueryKey,
+  buildFoldersQueryKey,
+  fetchFilesList,
+  fetchFoldersList,
+} from "@/lib/api/file-queries";
 
 type FolderPayload = {
   kind: "folder";
@@ -71,15 +79,30 @@ export function HtTreeView(props: HtTreeViewProps) {
   const currentFolderId = useUiStore((s) => s.currentFolderId);
   const setCurrentFolderId = useUiStore((s) => s.setCurrentFolderId);
   const setSelectedItemsStore = useUiStore((s) => s.setSelectedItems);
+  const queryClient = useQueryClient();
+  const treeView: DashboardView = "files";
   const itemCacheRef = React.useRef(new Map<string, ItemPayload>());
   const prevSelectedItemsRef = React.useRef<string[]>([]);
   const [dragOverFolderId, setDragOverFolderId] = React.useState<string | null>(
     null
   );
-  const [renaming, setRenaming] = React.useState<
-    { id: string; kind: "file" | "folder"; originalName: string }
-  | null>(null);
-  const [renameValue, setRenameValue] = React.useState("");
+
+  React.useEffect(() => {
+    const foldersKey = buildFoldersQueryKey({
+      parentId: currentFolderId ?? null,
+      dataroomId,
+      view: treeView,
+    });
+    queryClient.setQueryData(foldersKey, props.folders);
+
+    const filesKey = buildFilesQueryKey({
+      folderId: currentFolderId ?? null,
+      dataroomId,
+      search: "",
+      view: treeView,
+    });
+    queryClient.setQueryData(filesKey, props.files);
+  }, [currentFolderId, dataroomId, props.folders, props.files, queryClient]);
 
   const tree = useTree<ItemPayload>({
     rootItemId: "root",
@@ -103,7 +126,6 @@ export function HtTreeView(props: HtTreeViewProps) {
         if (id === "root") return { kind: "folder", id: null, name: "Root" };
         const cached = itemCacheRef.current.get(String(id));
         if (cached) return cached;
-        // Hydrated via getChildren; return minimal fallback until expanded
         const fallbackId = typeof id === "string" ? id : String(id);
         return {
           kind: "folder",
@@ -112,55 +134,104 @@ export function HtTreeView(props: HtTreeViewProps) {
         } satisfies FolderPayload;
       },
       async getChildren(id) {
-        const parentId = id === "root" ? null : (id as string);
+        const parentId = id === "root" ? null : (id as string | null);
 
-        const foldersUrl = parentId
-          ? `/api/folders/list?parentId=${parentId}${
-              dataroomId ? `&dataroomId=${dataroomId}` : ""
-            }`
-          : `/api/folders/list${dataroomId ? `?dataroomId=${dataroomId}` : ""}`;
+        const folderArgs = {
+          parentId,
+          dataroomId,
+          view: treeView,
+        };
+        const fileArgs = {
+          folderId: parentId,
+          dataroomId,
+          view: treeView,
+          search: "",
+        };
 
-        const filesParams = new URLSearchParams();
-        if (parentId) filesParams.append("folderId", parentId);
-        if (dataroomId) filesParams.append("dataroomId", dataroomId);
-
-        const [fr, fir] = await Promise.all([
-          fetch(foldersUrl),
-          fetch(`/api/files/list?${filesParams.toString()}`),
+        const [folders, files] = await Promise.all([
+          queryClient.fetchQuery({
+            queryKey: buildFoldersQueryKey(folderArgs),
+            queryFn: () => fetchFoldersList(folderArgs),
+          }),
+          queryClient.fetchQuery({
+            queryKey: buildFilesQueryKey(fileArgs),
+            queryFn: () => fetchFilesList(fileArgs),
+          }),
         ]);
 
-        const foldersJson = await fr.json();
-        const filesJson = await fir.json();
-        const folders = (foldersJson.folders || []) as Array<{
-          id: string;
-          name: string;
-          created_at?: string;
-        }>;
-
-        const files = (filesJson.files || []) as Array<FileItem>;
         const childrenIds: string[] = [];
-        for (const f of folders) {
-          itemCacheRef.current.set(f.id, {
+        for (const folder of folders) {
+          itemCacheRef.current.set(folder.id, {
             kind: "folder",
-            id: f.id,
-            name: f.name,
-            created_at: f.created_at,
+            id: folder.id,
+            name: folder.name,
+            created_at: folder.created_at,
           });
-          childrenIds.push(f.id);
+          childrenIds.push(folder.id);
         }
-        for (const f of files) {
-          itemCacheRef.current.set(f.id, {
+        for (const file of files) {
+          itemCacheRef.current.set(file.id, {
             kind: "file",
-            id: f.id,
-            name: f.name,
-            file: f,
+            id: file.id,
+            name: file.name,
+            file,
           });
-          childrenIds.push(f.id);
+          childrenIds.push(file.id);
         }
         return childrenIds;
       },
     },
-    features: [asyncDataLoaderFeature, selectionFeature, hotkeysCoreFeature],
+    features: [
+      asyncDataLoaderFeature,
+      selectionFeature,
+      hotkeysCoreFeature,
+      renamingFeature,
+    ],
+    canRename: (itemInstance) => {
+      const data = itemInstance.getItemData() as ItemPayload;
+      if (data.kind === "folder") {
+        if (data.id === null) {
+          return false;
+        }
+        return Boolean(props.onRenameFolder);
+      }
+      if (data.kind === "file") {
+        return Boolean(props.onRenameFile);
+      }
+      return false;
+    },
+    onRename: async (itemInstance, nextName) => {
+      const data = itemInstance.getItemData() as ItemPayload;
+      const trimmed = nextName.trim();
+      if (!trimmed || trimmed === data.name) {
+        return;
+      }
+      try {
+        if (data.kind === "file") {
+          if (!props.onRenameFile) return;
+          const updated = await props.onRenameFile(data.id, trimmed);
+          itemCacheRef.current.set(updated.id, {
+            kind: "file",
+            id: updated.id,
+            name: updated.name,
+            file: updated,
+          });
+        } else {
+          if (!props.onRenameFolder || !data.id) return;
+          const updated = await props.onRenameFolder(data.id, trimmed);
+          itemCacheRef.current.set(updated.id, {
+            kind: "folder",
+            id: updated.id,
+            name: updated.name,
+            created_at: updated.created_at,
+          });
+        }
+        toast.success("Renamed");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Rename failed";
+        toast.error(message);
+      }
+    },
   });
 
   const selectedItems = tree.getState().selectedItems;
@@ -316,62 +387,6 @@ export function HtTreeView(props: HtTreeViewProps) {
     [props]
   );
 
-  const startRename = React.useCallback(
-    (id: string, kind: "file" | "folder", currentName: string) => {
-      setRenaming({ id, kind, originalName: currentName });
-      setRenameValue(currentName);
-    },
-    []
-  );
-
-  const cancelRename = React.useCallback(() => {
-    setRenaming(null);
-    setRenameValue("");
-  }, []);
-
-  const submitRename = React.useCallback(async () => {
-    if (!renaming) return;
-    const trimmed = renameValue.trim();
-    if (!trimmed || trimmed === renaming.originalName) {
-      cancelRename();
-      return;
-    }
-
-    try {
-      if (renaming.kind === "file") {
-        if (!props.onRenameFile) {
-          cancelRename();
-          return;
-        }
-        const updated = await props.onRenameFile(renaming.id, trimmed);
-        itemCacheRef.current.set(updated.id, {
-          kind: "file",
-          id: updated.id,
-          name: updated.name,
-          file: updated,
-        });
-      } else {
-        if (!props.onRenameFolder) {
-          cancelRename();
-          return;
-        }
-        const updated = await props.onRenameFolder(renaming.id, trimmed);
-        itemCacheRef.current.set(updated.id, {
-          kind: "folder",
-          id: updated.id,
-          name: updated.name,
-          created_at: updated.created_at,
-        });
-      }
-      toast.success("Renamed");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Rename failed";
-      toast.error(message);
-    } finally {
-      cancelRename();
-    }
-  }, [cancelRename, renaming, renameValue, props.onRenameFile, props.onRenameFolder]);
-
   const guardMenuAction = React.useCallback(
     (action: () => void) => (event: React.MouseEvent<HTMLElement>) => {
       event.preventDefault();
@@ -426,8 +441,8 @@ export function HtTreeView(props: HtTreeViewProps) {
         const fileData = data.kind === "file" ? data.file : null;
         const folderId = isFolder ? (data as FolderPayload).id : null;
         const isRootFolder = isFolder && folderId === null;
-        const itemIdForRename = isFolder ? folderId ?? "" : String(data.id);
-        const isRenaming = renaming?.id === itemIdForRename;
+        const isRenaming = item.isRenaming();
+        const renameInputProps = isRenaming ? item.getRenameInputProps() : null;
         const canRename = isFolder
           ? Boolean(props.onRenameFolder && folderId)
           : Boolean(props.onRenameFile && fileData);
@@ -512,17 +527,14 @@ export function HtTreeView(props: HtTreeViewProps) {
               }
               onDragEnd={fileData && !isRenaming ? handleDragEnd : undefined}
             >
-              {isRenaming ? (
+              {isRenaming && renameInputProps ? (
                 <Input
-                  value={renameValue}
-                  onChange={(event) => setRenameValue(event.target.value)}
+                  {...renameInputProps}
                   onClick={(event) => event.stopPropagation()}
-                  onBlur={submitRename}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") submitRename();
-                    if (event.key === "Escape") cancelRename();
+                  onBlur={(event) => {
+                    event.stopPropagation();
+                    tree.completeRenaming();
                   }}
-                  autoFocus
                   className="h-7 text-sm"
                 />
               ) : (
@@ -564,13 +576,7 @@ export function HtTreeView(props: HtTreeViewProps) {
                 <DropdownMenuContent>
                   {canRename && !isRenaming && (
                     <DropdownMenuItem
-                      onClick={guardMenuAction(() =>
-                        startRename(
-                          itemIdForRename,
-                          isFolder ? "folder" : "file",
-                          data.name
-                        )
-                      )}
+                      onClick={guardMenuAction(() => item.startRenaming())}
                     >
                       <Pencil />
                       Rename
