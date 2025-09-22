@@ -1,12 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -24,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Download, Trash2, Share, Archive, MoreHorizontal } from "lucide-react";
+import { Download, Trash2, Share } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { FileItem, FolderItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -154,19 +148,6 @@ export function BulkActions({
               <Trash2 />
               Delete
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <MoreHorizontal />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>
-                  <Archive />
-                  Archive
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Button size="sm" variant="ghost" onClick={onClearSelection}>
               Cancel
             </Button>

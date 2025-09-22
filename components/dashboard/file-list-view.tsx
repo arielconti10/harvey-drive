@@ -26,10 +26,7 @@ import {
 } from "@/lib/utils/file-utils";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import {
-  useItemRename,
-  useFileDragAndDrop,
-} from "./use-explorer-interactions";
+import { useItemRename, useFileDragAndDrop } from "./use-explorer-interactions";
 import {
   ExplorerFileActions,
   ExplorerFolderActions,
@@ -79,12 +76,8 @@ export function FileListView({
   onFileStarToggle,
   onFileMove,
 }: FileListViewProps) {
-  const {
-    renamingId,
-    startRename,
-    getRenameInputProps,
-    isRenaming,
-  } = useItemRename({ onRenameFile, onRenameFolder });
+  const { renamingId, startRename, getRenameInputProps, isRenaming } =
+    useItemRename({ onRenameFile, onRenameFolder });
   const {
     dragOverFolderId,
     handleDragStart,
@@ -151,7 +144,8 @@ export function FileListView({
                 className={cn(
                   "group flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm transition-colors",
                   isDragTarget && "ring-1 ring-ring",
-                  isSelected && "border-primary/50 bg-primary/5 ring-1 ring-primary/30"
+                  isSelected &&
+                    "border-primary/50 bg-primary/5 ring-1 ring-primary/30"
                 )}
                 onClick={() => onFolderOpen(folder.id)}
                 aria-selected={isSelected}
@@ -183,7 +177,8 @@ export function FileListView({
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Updated {format(new Date(folder.created_at), "MMM d, yyyy")}
+                        Updated{" "}
+                        {format(new Date(folder.created_at), "MMM d, yyyy")}
                       </p>
                     </div>
                     <DropdownMenu>
@@ -216,7 +211,8 @@ export function FileListView({
                 key={file.id}
                 className={cn(
                   "group flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm transition-colors",
-                  isSelected && "border-primary/50 bg-primary/5 ring-1 ring-primary/30"
+                  isSelected &&
+                    "border-primary/50 bg-primary/5 ring-1 ring-primary/30"
                 )}
                 onClick={() =>
                   canPreview(file.mime_type, file.name) && handlePreview(file)
@@ -258,7 +254,7 @@ export function FileListView({
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        {formatFileSize(file.size)} · {" "}
+                        {formatFileSize(file.size)} ·{" "}
                         {format(new Date(file.created_at), "MMM d, yyyy")}
                       </p>
                     </div>
@@ -277,7 +273,9 @@ export function FileListView({
                           file={file}
                           onRename={() => startRename(file.id, file.name)}
                           onPreview={
-                            onFilePreview ? () => onFilePreview(file) : undefined
+                            onFilePreview
+                              ? () => onFilePreview(file)
+                              : undefined
                           }
                           onDownload={downloadFileWithFallback(
                             file,
@@ -288,7 +286,8 @@ export function FileListView({
                           }
                           onToggleStar={
                             onFileStarToggle
-                              ? () => onFileStarToggle(file.id, !file.is_starred)
+                              ? () =>
+                                  onFileStarToggle(file.id, !file.is_starred)
                               : undefined
                           }
                           onDelete={() => onFileDelete(file.id)}
@@ -316,9 +315,7 @@ export function FileListView({
                   />
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Size
-*** End Patch
-                </TableHead>
+                <TableHead>Size</TableHead>
                 <TableHead>Modified</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
@@ -339,9 +336,13 @@ export function FileListView({
                     data-name={folder.name}
                     aria-selected={isSelected}
                     onClick={() => onFolderOpen(folder.id)}
-                    onDragOver={(event) => handleFolderDragOver(event, folder.id)}
+                    onDragOver={(event) =>
+                      handleFolderDragOver(event, folder.id)
+                    }
                     onDrop={(event) => handleFolderDrop(event, folder.id)}
-                    onDragLeave={(event) => handleFolderDragLeave(event, folder.id)}
+                    onDragLeave={(event) =>
+                      handleFolderDragLeave(event, folder.id)
+                    }
                   >
                     <TableCell>
                       <Checkbox
@@ -473,7 +474,9 @@ export function FileListView({
                             file={file}
                             onRename={() => startRename(file.id, file.name)}
                             onPreview={
-                              onFilePreview ? () => onFilePreview(file) : undefined
+                              onFilePreview
+                                ? () => onFilePreview(file)
+                                : undefined
                             }
                             onDownload={downloadFileWithFallback(
                               file,
@@ -484,7 +487,8 @@ export function FileListView({
                             }
                             onToggleStar={
                               onFileStarToggle
-                                ? () => onFileStarToggle(file.id, !file.is_starred)
+                                ? () =>
+                                    onFileStarToggle(file.id, !file.is_starred)
                                 : undefined
                             }
                             onDelete={() => onFileDelete(file.id)}
