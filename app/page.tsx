@@ -6,17 +6,18 @@ import { redirect } from "next/navigation";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export default function HomePage({
+export default async function HomePage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
-  const code = searchParams.code;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const code = resolvedSearchParams.code;
 
   if (code) {
     const params = new URLSearchParams();
 
-    Object.entries(searchParams).forEach(([key, value]) => {
+    Object.entries(resolvedSearchParams).forEach(([key, value]) => {
       if (Array.isArray(value)) {
         value.forEach((entry) => params.append(key, entry));
       } else if (value !== undefined) {

@@ -22,14 +22,19 @@ type PublicShareRow = {
 }
 
 interface SharedFilePageProps {
-  params: {
+  params?: Promise<{
     token: string
-  }
+  }>
 }
 
 export default async function SharedFilePage({ params }: SharedFilePageProps) {
   const supabase = await createClient()
-  const { token } = params
+  const resolvedParams = params ? await params : undefined
+  const token = resolvedParams?.token
+
+  if (!token) {
+    notFound()
+  }
 
   try {
     const { data, error } = await supabase.rpc("get_public_share", { token })
