@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useState } from "react";
-import type { DragEvent } from "react";
+import type { DragEvent, MouseEvent } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Folder,
@@ -103,6 +103,7 @@ export function FileListView({
       setRenamingId(null);
     }
   };
+  
   const allItems = [...folders, ...files];
   const allSelected =
     allItems.length > 0 && allItems.every((item) => selectedItems.has(item.id));
@@ -175,6 +176,14 @@ export function FileListView({
     if (!onFilePreview || !canPreview(file.mime_type, file.name)) return;
     if (renamingId === file.id) return;
     onFilePreview(file);
+  };
+
+  const guardMenuAction = (action: () => void) => (
+    event: MouseEvent<HTMLElement>
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
   };
 
   return (
@@ -263,13 +272,17 @@ export function FileListView({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => startRename(folder.id, folder.name)}
+                        onClick={guardMenuAction(() =>
+                          startRename(folder.id, folder.name)
+                        )}
                       >
                         <Pencil className="h-4 w-4" />
                         Rename
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => onFolderDelete(folder.id)}
+                        onClick={guardMenuAction(() =>
+                          onFolderDelete(folder.id)
+                        )}
                       >
                         <Trash2 className="h-4 w-4" />
                         Delete
@@ -354,7 +367,9 @@ export function FileListView({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => startRename(file.id, file.name)}
+                        onClick={guardMenuAction(() =>
+                          startRename(file.id, file.name)
+                        )}
                       >
                         <Pencil className="h-4 w-4" />
                         Rename
@@ -501,13 +516,17 @@ export function FileListView({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem
-                          onClick={() => startRename(folder.id, folder.name)}
+                          onClick={guardMenuAction(() =>
+                            startRename(folder.id, folder.name)
+                          )}
                         >
                           <Pencil className="h-4 w-4" />
                           Rename
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => onFolderDelete(folder.id)}
+                          onClick={guardMenuAction(() =>
+                            onFolderDelete(folder.id)
+                          )}
                         >
                           <Trash2 className="h-4 w-4" />
                           Delete
@@ -599,7 +618,9 @@ export function FileListView({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem
-                          onClick={() => startRename(file.id, file.name)}
+                          onClick={guardMenuAction(() =>
+                            startRename(file.id, file.name)
+                          )}
                         >
                           <Pencil className="h-4 w-4" />
                           Rename

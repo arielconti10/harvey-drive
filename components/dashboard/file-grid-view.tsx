@@ -167,7 +167,10 @@ export function FileGridView({
               data-testid="folder-row"
               data-name={folder.name}
               aria-selected={isSelected}
-              onClick={() => onFolderOpen(folder.id)}
+              onClick={(e) => {
+                onFolderOpen(folder.id);
+                e.preventDefault();
+              }}
               onDragOver={(event) => handleFolderDragOver(event, folder.id)}
               onDrop={(event) => handleFolderDrop(event, folder.id)}
               onDragLeave={(event) => handleFolderDragLeave(event, folder.id)}
@@ -178,61 +181,74 @@ export function FileGridView({
                   isDragTarget && "border border-ring"
                 )}
               >
-              <div className="absolute top-2 left-2">
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={(checked) =>
-                    onItemSelect(folder.id, !!checked)
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    asChild
+                <div className="absolute top-2 left-2">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={(checked) =>
+                      onItemSelect(folder.id, !!checked)
+                    }
                     onClick={(e) => e.stopPropagation()}
-                  >
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      onClick={() => startRename(folder.id, folder.name)}
+                  />
+                </div>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      asChild
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Pencil className="h-4 w-4" />
-                      Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onFolderDelete(folder.id)}>
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <Folder className="h-12 w-12 mx-auto mb-2 text-foreground" />
-              {renamingId === folder.id ? (
-                <Input
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onBlur={() => submitRename(folder.id, "folder")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") submitRename(folder.id, "folder");
-                    if (e.key === "Escape") setRenamingId(null);
-                  }}
-                  autoFocus
-                  className="h-7"
-                />
-              ) : (
-                <p className="text-sm font-medium truncate" title={folder.name}>
-                  {folder.name}
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          startRename(folder.id, folder.name);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onFolderDelete(folder.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <Folder className="h-12 w-12 mx-auto mb-2 text-foreground" />
+                {renamingId === folder.id ? (
+                  <Input
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={() => submitRename(folder.id, "folder")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitRename(folder.id, "folder");
+                      if (e.key === "Escape") setRenamingId(null);
+                    }}
+                    autoFocus
+                    className="h-7"
+                  />
+                ) : (
+                  <p
+                    className="text-sm font-medium truncate"
+                    title={folder.name}
+                  >
+                    {folder.name}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(folder.created_at), "MMM d, yyyy")}
                 </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {format(new Date(folder.created_at), "MMM d, yyyy")}
-              </p>
-            </CardContent>
+              </CardContent>
             </Card>
           );
         })}
@@ -257,116 +273,119 @@ export function FileGridView({
               onDoubleClick={() => handlePreview(file)}
             >
               <CardContent className="p-4 text-center">
-              <div className="absolute top-2 left-2">
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={(checked) =>
-                    onItemSelect(file.id, !!checked)
-                  }
-                  onClick={(event) => event.stopPropagation()}
-                />
-              </div>
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      data-testid={`file-menu-${file.id}`}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      onClick={() => startRename(file.id, file.name)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Rename
-                    </DropdownMenuItem>
-                    {canPreview(file.mime_type, file.name) && (
-                      <DropdownMenuItem onClick={() => handlePreview(file)}>
-                        <Eye className="h-4 w-4" />
-                        Preview
-                      </DropdownMenuItem>
-                    )}
-                    {onFileStarToggle && (
-                      <DropdownMenuItem
-                        onClick={() =>
-                          onFileStarToggle(file.id, !file.is_starred)
-                        }
-                      >
-                        <Star
-                          className={cn(
-                            "h-4 w-4",
-                            file.is_starred
-                              ? "fill-amber-500 text-amber-500"
-                              : "text-muted-foreground"
-                          )}
-                        />
-                        {file.is_starred ? "Remove star" : "Add star"}
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={() => handleDownload(file)}>
-                      <Download className="h-4 w-4" />
-                      Download
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onFileShare?.(file)}
-                      data-testid="btn-share"
-                    >
-                      <Share className="h-4 w-4" />
-                      Share
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onFileDelete(file.id)}>
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div
-                onClick={() =>
-                  canPreview(file.mime_type, file.name) && handlePreview(file)
-                }
-              >
-                <div className="h-12 w-12 mx-auto mb-2 flex items-center justify-center text-2xl">
-                  {getFileIcon(file.mime_type, file.name)}
-                </div>
-                {renamingId === file.id ? (
-                  <Input
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
+                <div className="absolute top-2 left-2">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={(checked) =>
+                      onItemSelect(file.id, !!checked)
+                    }
                     onClick={(event) => event.stopPropagation()}
-                    onDoubleClick={(event) => event.stopPropagation()}
-                    onBlur={() => submitRename(file.id, "file")}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") submitRename(file.id, "file");
-                      if (e.key === "Escape") setRenamingId(null);
-                    }}
-                    autoFocus
-                    className="h-7"
                   />
-                ) : (
-                  <p
-                    className="text-sm font-medium truncate"
-                    title={file.name}
-                  >
-                    <span className="flex items-center justify-center gap-1">
-                      <span className="truncate">{file.name}</span>
-                      {file.is_starred && (
-                        <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
+                </div>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-testid={`file-menu-${file.id}`}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startRename(file.id, file.name);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Rename
+                      </DropdownMenuItem>
+                      {canPreview(file.mime_type, file.name) && (
+                        <DropdownMenuItem onClick={() => handlePreview(file)}>
+                          <Eye className="h-4 w-4" />
+                          Preview
+                        </DropdownMenuItem>
                       )}
-                    </span>
+                      {onFileStarToggle && (
+                        <DropdownMenuItem
+                          onClick={() =>
+                            onFileStarToggle(file.id, !file.is_starred)
+                          }
+                        >
+                          <Star
+                            className={cn(
+                              "h-4 w-4",
+                              file.is_starred
+                                ? "fill-amber-500 text-amber-500"
+                                : "text-muted-foreground"
+                            )}
+                          />
+                          {file.is_starred ? "Remove star" : "Add star"}
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => handleDownload(file)}>
+                        <Download className="h-4 w-4" />
+                        Download
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onFileShare?.(file)}
+                        data-testid="btn-share"
+                      >
+                        <Share className="h-4 w-4" />
+                        Share
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onFileDelete(file.id)}>
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div
+                  onClick={() =>
+                    canPreview(file.mime_type, file.name) && handlePreview(file)
+                  }
+                >
+                  <div className="h-12 w-12 mx-auto mb-2 flex items-center justify-center text-2xl">
+                    {getFileIcon(file.mime_type, file.name)}
+                  </div>
+                  {renamingId === file.id ? (
+                    <Input
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onClick={(event) => event.stopPropagation()}
+                      onDoubleClick={(event) => event.stopPropagation()}
+                      onBlur={() => submitRename(file.id, "file")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") submitRename(file.id, "file");
+                        if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      autoFocus
+                      className="h-7"
+                    />
+                  ) : (
+                    <p
+                      className="text-sm font-medium truncate"
+                      title={file.name}
+                    >
+                      <span className="flex items-center justify-center gap-1">
+                        <span className="truncate">{file.name}</span>
+                        {file.is_starred && (
+                          <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
+                        )}
+                      </span>
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(file.size)} •{" "}
+                    {format(new Date(file.created_at), "MMM d, yyyy")}
                   </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(file.size)} •{" "}
-                  {format(new Date(file.created_at), "MMM d, yyyy")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>

@@ -22,8 +22,9 @@ import {
   Eye,
   ChevronDown,
   ChevronRight,
+  Pencil,
 } from "lucide-react";
-import type { FileItem } from "@/lib/types";
+import type { FileItem, FolderItem } from "@/lib/types";
 import { format } from "date-fns";
 import {
   formatFileSize,
@@ -33,6 +34,8 @@ import {
 import { useUiStore } from "@/lib/store/ui";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 type FolderPayload = {
   kind: "folder";
@@ -57,10 +60,15 @@ interface HtTreeViewProps {
   onFileDelete: (fileId: string) => void;
   onFolderDelete: (folderId: string) => void;
   onFileMove?: (fileId: string, targetFolderId: string | null) => void;
+  files: FileItem[];
+  folders: FolderItem[];
+  onRenameFile?: (id: string, name: string) => Promise<FileItem>;
+  onRenameFolder?: (id: string, name: string) => Promise<FolderItem>;
 }
 
 export function HtTreeView(props: HtTreeViewProps) {
   const dataroomId = useUiStore((s) => s.currentDataroomId);
+  const currentFolderId = useUiStore((s) => s.currentFolderId);
   const setCurrentFolderId = useUiStore((s) => s.setCurrentFolderId);
   const setSelectedItemsStore = useUiStore((s) => s.setSelectedItems);
   const itemCacheRef = React.useRef(new Map<string, ItemPayload>());
@@ -68,6 +76,10 @@ export function HtTreeView(props: HtTreeViewProps) {
   const [dragOverFolderId, setDragOverFolderId] = React.useState<string | null>(
     null
   );
+  const [renaming, setRenaming] = React.useState<
+    { id: string; kind: "file" | "folder"; originalName: string }
+  | null>(null);
+  const [renameValue, setRenameValue] = React.useState("");
 
   const tree = useTree<ItemPayload>({
     rootItemId: "root",
@@ -101,18 +113,22 @@ export function HtTreeView(props: HtTreeViewProps) {
       },
       async getChildren(id) {
         const parentId = id === "root" ? null : (id as string);
+
         const foldersUrl = parentId
           ? `/api/folders/list?parentId=${parentId}${
               dataroomId ? `&dataroomId=${dataroomId}` : ""
             }`
           : `/api/folders/list${dataroomId ? `?dataroomId=${dataroomId}` : ""}`;
+
         const filesParams = new URLSearchParams();
         if (parentId) filesParams.append("folderId", parentId);
         if (dataroomId) filesParams.append("dataroomId", dataroomId);
+
         const [fr, fir] = await Promise.all([
           fetch(foldersUrl),
           fetch(`/api/files/list?${filesParams.toString()}`),
         ]);
+
         const foldersJson = await fr.json();
         const filesJson = await fir.json();
         const folders = (foldersJson.folders || []) as Array<{
@@ -120,6 +136,7 @@ export function HtTreeView(props: HtTreeViewProps) {
           name: string;
           created_at?: string;
         }>;
+
         const files = (filesJson.files || []) as Array<FileItem>;
         const childrenIds: string[] = [];
         for (const f of folders) {
@@ -147,6 +164,79 @@ export function HtTreeView(props: HtTreeViewProps) {
   });
 
   const selectedItems = tree.getState().selectedItems;
+
+  const branchSignature = React.useMemo(() => {
+    const folderSignature = props.folders
+      .map(
+        (folder, index) =>
+          `${index}:${folder.id}:${folder.name}:${folder.updated_at}`
+      )
+      .join("|");
+    const fileSignature = props.files
+      .map(
+        (file, index) =>
+          `${index}:${file.id}:${file.name}:${file.updated_at}`
+      )
+      .join("|");
+    return `${folderSignature}--${fileSignature}`;
+  }, [props.folders, props.files]);
+
+  const branchStateRef = React.useRef<{
+    parentId: string;
+    signature: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    const rootItemId = tree.getConfig().rootItemId;
+    const parentItemId = currentFolderId ?? rootItemId;
+
+    const folderPayloads = props.folders.map<FolderPayload>((folder) => ({
+      kind: "folder",
+      id: folder.id,
+      name: folder.name,
+      created_at: folder.created_at,
+    }));
+
+    const filePayloads = props.files.map<FilePayload>((file) => ({
+      kind: "file",
+      id: file.id,
+      name: file.name,
+      file,
+    }));
+
+    for (const payload of [...folderPayloads, ...filePayloads]) {
+      if (!payload.id) continue;
+      itemCacheRef.current.set(payload.id, payload);
+      const instance = tree.getItemInstance(payload.id);
+      instance?.updateCachedData(payload);
+    }
+
+    const folderIds = folderPayloads
+      .map((payload) => payload.id)
+      .filter((value): value is string => Boolean(value));
+
+    const nextChildrenIds = [
+      ...folderIds,
+      ...filePayloads.map((payload) => payload.id),
+    ];
+
+    const nextState = {
+      parentId: parentItemId,
+      signature: `${parentItemId}:${branchSignature}`,
+    };
+
+    const prevState = branchStateRef.current;
+    branchStateRef.current = nextState;
+
+    if (
+      !prevState ||
+      prevState.parentId !== nextState.parentId ||
+      prevState.signature !== nextState.signature
+    ) {
+      const parentInstance = tree.getItemInstance(parentItemId);
+      parentInstance?.updateCachedChildrenIds(nextChildrenIds);
+    }
+  }, [branchSignature, currentFolderId, props.files, props.folders, tree]);
 
   const handleDragStart = React.useCallback(
     (event: React.DragEvent, file: FileItem) => {
@@ -226,6 +316,71 @@ export function HtTreeView(props: HtTreeViewProps) {
     [props]
   );
 
+  const startRename = React.useCallback(
+    (id: string, kind: "file" | "folder", currentName: string) => {
+      setRenaming({ id, kind, originalName: currentName });
+      setRenameValue(currentName);
+    },
+    []
+  );
+
+  const cancelRename = React.useCallback(() => {
+    setRenaming(null);
+    setRenameValue("");
+  }, []);
+
+  const submitRename = React.useCallback(async () => {
+    if (!renaming) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed || trimmed === renaming.originalName) {
+      cancelRename();
+      return;
+    }
+
+    try {
+      if (renaming.kind === "file") {
+        if (!props.onRenameFile) {
+          cancelRename();
+          return;
+        }
+        const updated = await props.onRenameFile(renaming.id, trimmed);
+        itemCacheRef.current.set(updated.id, {
+          kind: "file",
+          id: updated.id,
+          name: updated.name,
+          file: updated,
+        });
+      } else {
+        if (!props.onRenameFolder) {
+          cancelRename();
+          return;
+        }
+        const updated = await props.onRenameFolder(renaming.id, trimmed);
+        itemCacheRef.current.set(updated.id, {
+          kind: "folder",
+          id: updated.id,
+          name: updated.name,
+          created_at: updated.created_at,
+        });
+      }
+      toast.success("Renamed");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Rename failed";
+      toast.error(message);
+    } finally {
+      cancelRename();
+    }
+  }, [cancelRename, renaming, renameValue, props.onRenameFile, props.onRenameFolder]);
+
+  const guardMenuAction = React.useCallback(
+    (action: () => void) => (event: React.MouseEvent<HTMLElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      action();
+    },
+    []
+  );
+
   React.useEffect(() => {
     const currentSelected = selectedItems ?? [];
     const prev = prevSelectedItemsRef.current;
@@ -270,8 +425,17 @@ export function HtTreeView(props: HtTreeViewProps) {
         const isFolder = data.kind === "folder";
         const fileData = data.kind === "file" ? data.file : null;
         const folderId = isFolder ? (data as FolderPayload).id : null;
+        const isRootFolder = isFolder && folderId === null;
+        const itemIdForRename = isFolder ? folderId ?? "" : String(data.id);
+        const isRenaming = renaming?.id === itemIdForRename;
+        const canRename = isFolder
+          ? Boolean(props.onRenameFolder && folderId)
+          : Boolean(props.onRenameFile && fileData);
         const isDroppableFolder = isFolder && folderId !== null;
         const dropActive = isDroppableFolder && dragOverFolderId === folderId;
+        const hasMenuItems = !isRootFolder;
+        const canPreviewFile =
+          !!fileData && canPreview(fileData.mime_type, fileData.name);
         return (
           <div
             key={item.getKey()}
@@ -338,26 +502,45 @@ export function HtTreeView(props: HtTreeViewProps) {
                 )}
               </span>
             )}
-            <button
-              className="flex-1 text-left font-medium"
-              onClick={() =>
-                isFolder
-                  ? setCurrentFolderId(data.id)
-                  : fileData && canPreview(fileData.mime_type, fileData.name)
-                  ? props.onFilePreview(fileData)
-                  : undefined
-              }
-              draggable={!!fileData}
+            <div
+              className="flex-1"
+              draggable={!!fileData && !isRenaming}
               onDragStart={
-                fileData
+                fileData && !isRenaming
                   ? (event) => handleDragStart(event, fileData)
                   : undefined
               }
-              onDragEnd={fileData ? handleDragEnd : undefined}
-              type="button"
+              onDragEnd={fileData && !isRenaming ? handleDragEnd : undefined}
             >
-              {data.name}
-            </button>
+              {isRenaming ? (
+                <Input
+                  value={renameValue}
+                  onChange={(event) => setRenameValue(event.target.value)}
+                  onClick={(event) => event.stopPropagation()}
+                  onBlur={submitRename}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") submitRename();
+                    if (event.key === "Escape") cancelRename();
+                  }}
+                  autoFocus
+                  className="h-7 text-sm"
+                />
+              ) : (
+                <button
+                  className="w-full text-left font-medium"
+                  onClick={() =>
+                    isFolder
+                      ? setCurrentFolderId((data as FolderPayload).id ?? null)
+                      : fileData && canPreviewFile
+                      ? props.onFilePreview(fileData)
+                      : undefined
+                  }
+                  type="button"
+                >
+                  {data.name}
+                </button>
+              )}
+            </div>
             <span className="text-xs">
               {isFolder
                 ? data.created_at
@@ -367,45 +550,67 @@ export function HtTreeView(props: HtTreeViewProps) {
                 ? formatFileSize(fileData.size)
                 : ""}
             </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <MoreVertical />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {fileData && canPreview(fileData.mime_type, fileData.name) && (
-                  <DropdownMenuItem
-                    onClick={() => props.onFilePreview(fileData)}
+            {hasMenuItems ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(event) => event.stopPropagation()}
                   >
-                    <Eye />
-                    Preview
-                  </DropdownMenuItem>
-                )}
-                {fileData && (
+                    <MoreVertical />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {canRename && !isRenaming && (
+                    <DropdownMenuItem
+                      onClick={guardMenuAction(() =>
+                        startRename(
+                          itemIdForRename,
+                          isFolder ? "folder" : "file",
+                          data.name
+                        )
+                      )}
+                    >
+                      <Pencil />
+                      Rename
+                    </DropdownMenuItem>
+                  )}
+                  {fileData && canPreviewFile && (
+                    <DropdownMenuItem
+                      onClick={guardMenuAction(() =>
+                        props.onFilePreview(fileData)
+                      )}
+                    >
+                      <Eye />
+                      Preview
+                    </DropdownMenuItem>
+                  )}
+                  {fileData && (
+                    <DropdownMenuItem
+                      onClick={guardMenuAction(() =>
+                        props.onFileDownload(fileData)
+                      )}
+                    >
+                      <Download />
+                      Download
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
-                    onClick={() => props.onFileDownload(fileData)}
+                    onClick={guardMenuAction(() =>
+                      isFolder && folderId
+                        ? props.onFolderDelete(folderId)
+                        : props.onFileDelete(String(data.id))
+                    )}
                   >
-                    <Download />
-                    Download
+                    <Trash2 />
+                    Delete
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  onClick={() =>
-                    isFolder
-                      ? props.onFolderDelete(String(data.id))
-                      : props.onFileDelete(String(data.id))
-                  }
-                >
-                  <Trash2 />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="w-6" />
+            )}
           </div>
         );
       })}

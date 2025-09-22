@@ -346,6 +346,7 @@ export function FileExplorer({
         case "tree":
           return (
             <HtTreeView
+              {...commonProps}
               onFileDownload={onFileDownload}
               onFilePreview={onFilePreview}
               onFileShare={onFileShare}
