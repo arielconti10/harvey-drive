@@ -13,20 +13,9 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Folder,
-  MoreVertical,
-  Download,
-  Trash2,
-  Eye,
-  ChevronDown,
-  ChevronRight,
-  Pencil,
-  Share,
-} from "lucide-react";
+import { Folder, MoreVertical, ChevronDown, ChevronRight } from "lucide-react";
 import type { DashboardView, FileItem, FolderItem } from "@/lib/types";
 import { format } from "date-fns";
 import {
@@ -56,6 +45,14 @@ import {
   normalizeSearch,
   resolveQueryData,
 } from "@/lib/api/query-helpers";
+import {
+  ExplorerFileActions,
+  ExplorerFolderActions,
+} from "./explorer-action-items";
+import {
+  useFileDragAndDrop,
+} from "./use-explorer-interactions";
+import { downloadFileWithFallback } from "./explorer-utils";
 
 interface FolderPayload {
   kind: "folder";
@@ -117,9 +114,16 @@ export function HtTreeView({
     [searchQuery]
   );
   const itemCacheRef = React.useRef(new Map<string, ItemPayload>());
-  const [dragOverFolderId, setDragOverFolderId] = React.useState<string | null>(
-    null
-  );
+  const {
+    dragOverFolderId,
+    handleDragStart,
+    handleDragEnd,
+    handleFolderDragOver,
+    handleFolderDrop,
+    handleFolderDragLeave,
+    handleRootDragOver,
+    handleRootDrop,
+  } = useFileDragAndDrop({ onFileMove });
 
   const tree = useTree<ItemPayload>({
     rootItemId: "root",
@@ -299,84 +303,6 @@ export function HtTreeView({
   const selectedItems = tree.getState().selectedItems;
   useSelectionBridge(selectedItems, setSelectedItemsStore);
 
-  const handleDragStart = React.useCallback(
-    (event: React.DragEvent, file: FileItem) => {
-      event.dataTransfer.setData("application/x-file-id", file.id);
-      if (file.folder_id) {
-        event.dataTransfer.setData(
-          "application/x-source-folder-id",
-          file.folder_id
-        );
-      }
-      event.dataTransfer.effectAllowed = "move";
-    },
-    []
-  );
-
-  const handleDragEnd = React.useCallback(() => {
-    setDragOverFolderId(null);
-  }, []);
-
-  const handleFolderDragOver = React.useCallback(
-    (event: React.DragEvent, folderId: string) => {
-      if (!onFileMove) return;
-      if (!event.dataTransfer.types.includes("application/x-file-id")) return;
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
-      setDragOverFolderId(folderId);
-    },
-    [onFileMove]
-  );
-
-  const handleFolderDrop = React.useCallback(
-    (event: React.DragEvent, folderId: string) => {
-      if (!onFileMove) return;
-      const fileId = event.dataTransfer.getData("application/x-file-id");
-      if (!fileId) return;
-      event.preventDefault();
-      event.stopPropagation();
-      setDragOverFolderId(null);
-      void onFileMove(fileId, folderId);
-    },
-    [onFileMove]
-  );
-
-  const handleFolderDragLeave = React.useCallback(
-    (event: React.DragEvent, folderId: string) => {
-      const related = event.relatedTarget as Node | null;
-      if (!related || !event.currentTarget.contains(related)) {
-        setDragOverFolderId((current) =>
-          current === folderId ? null : current
-        );
-      }
-    },
-    []
-  );
-
-  const handleRootDragOver = React.useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
-      if (!onFileMove) return;
-      if (!event.dataTransfer.types.includes("application/x-file-id")) return;
-      event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
-      setDragOverFolderId(null);
-    },
-    [onFileMove]
-  );
-
-  const handleRootDrop = React.useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
-      if (!onFileMove) return;
-      const fileId = event.dataTransfer.getData("application/x-file-id");
-      if (!fileId) return;
-      event.preventDefault();
-      event.stopPropagation();
-      setDragOverFolderId(null);
-      void onFileMove(fileId, null);
-    },
-    [onFileMove]
-  );
-
   const guardMenuAction = React.useCallback(
     (action: () => void) => (event: React.MouseEvent<HTMLElement>) => {
       event.preventDefault();
@@ -438,7 +364,7 @@ export function HtTreeView({
               : undefined,
           onDragEnd:
             fileData && !isRenaming
-              ? (event: React.DragEvent<HTMLDivElement>) => {
+              ? () => {
                   handleDragEnd();
                 }
               : undefined,
@@ -678,46 +604,43 @@ function TreeRow({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {canRename && !isRenaming && (
-              <DropdownMenuItem onClick={guardMenuAction(onStartRenaming)}>
-                <Pencil />
-                Rename
-              </DropdownMenuItem>
-            )}
-            {fileData && canPreviewFile && (
-              <DropdownMenuItem
-                onClick={guardMenuAction(() => onFilePreview(fileData))}
-              >
-                <Eye />
-                Preview
-              </DropdownMenuItem>
-            )}
-            {fileData && onFileShare && (
-              <DropdownMenuItem
-                onClick={guardMenuAction(() => onFileShare(fileData))}
-              >
-                <Share />
-                Share
-              </DropdownMenuItem>
-            )}
-            {fileData && (
-              <DropdownMenuItem
-                onClick={guardMenuAction(() => onFileDownload(fileData))}
-              >
-                <Download />
-                Download
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={guardMenuAction(() =>
-                isFolder && folderId
-                  ? onFolderDelete(folderId)
-                  : onFileDelete(String(data.id))
-              )}
-            >
-              <Trash2 />
-              Delete
-            </DropdownMenuItem>
+            {isFolder && folderId ? (
+              <>
+                <ExplorerFolderActions
+                  onRename={
+                    canRename && !isRenaming
+                      ? () => onStartRenaming()
+                      : undefined
+                  }
+                  onDelete={() => onFolderDelete(folderId)}
+                  wrapAction={guardMenuAction}
+                />
+              </>
+            ) : fileData ? (
+              <>
+                <ExplorerFileActions
+                  file={fileData}
+                  onRename={
+                    canRename && !isRenaming
+                      ? () => onStartRenaming()
+                      : undefined
+                  }
+                  onPreview={
+                    canPreviewFile ? () => onFilePreview(fileData) : undefined
+                  }
+                  onDownload={downloadFileWithFallback(
+                    fileData,
+                    onFileDownload
+                  )}
+                  onShare={
+                    onFileShare ? () => onFileShare(fileData) : undefined
+                  }
+                  onDelete={() => onFileDelete(String(data.id))}
+                  wrapAction={guardMenuAction}
+                  showStar={false}
+                />
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       )}

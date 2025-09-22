@@ -178,25 +178,23 @@ export function DashboardSidebar({
     router.push("/");
   };
 
-  const sidebarItems = (
-    [
-      {
-        icon: Home,
-        label: "My Files",
-        view: "files" as const,
-      },
-      {
-        icon: Star,
-        label: "Starred",
-        view: "starred" as const,
-      },
-      {
-        icon: Share2,
-        label: "Shared",
-        view: "shared" as const,
-      },
-    ]
-  ).map((item) => ({
+  const sidebarItems = [
+    {
+      icon: Home,
+      label: "My Files",
+      view: "files" as const,
+    },
+    {
+      icon: Star,
+      label: "Starred",
+      view: "starred" as const,
+    },
+    {
+      icon: Share2,
+      label: "Shared",
+      view: "shared" as const,
+    },
+  ].map((item) => ({
     ...item,
     active: currentView === item.view,
   }));

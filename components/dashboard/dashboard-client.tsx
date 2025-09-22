@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DashboardView, FileItem, SortBy, SortOrder } from "@/lib/types";
 import { DashboardHeader } from "./dashboard-header";
 import { FileExplorer } from "./file-explorer";
@@ -17,19 +17,8 @@ import { toast } from "sonner";
 import { ExplorerControls } from "./explorer-controls";
 import { Progress } from "@/components/ui/progress";
 
-export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
-  const defaultSortBy: SortBy = "date";
-  const defaultSortOrder: SortOrder = "desc";
-  const {
-    currentFolderId,
-    currentDataroomId,
-    viewMode,
-    sortBy,
-    sortOrder,
-    searchFilters,
-    selectedItems,
-    showUploadZone,
-  } = useUiStore(
+const useDashboardUiState = () => {
+  const storeSlice = useUiStore(
     useShallow((state) => ({
       currentFolderId: state.currentFolderId,
       currentDataroomId: state.currentDataroomId,
@@ -39,20 +28,6 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
       searchFilters: state.searchFilters,
       selectedItems: state.selectedItems,
       showUploadZone: state.showUploadZone,
-    }))
-  );
-
-  const {
-    setCurrentFolderId,
-    setViewMode,
-    setSortBy,
-    setSortOrder,
-    setSearchFilters,
-    setSelectedItems,
-    clearSelection,
-    setShowUploadZone,
-  } = useUiStore(
-    useShallow((state) => ({
       setCurrentFolderId: state.setCurrentFolderId,
       setViewMode: state.setViewMode,
       setSortBy: state.setSortBy,
@@ -63,6 +38,69 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
       setShowUploadZone: state.setShowUploadZone,
     }))
   );
+
+  const {
+    currentFolderId,
+    currentDataroomId,
+    viewMode,
+    sortBy,
+    sortOrder,
+    searchFilters,
+    selectedItems,
+    showUploadZone,
+    setCurrentFolderId,
+    setViewMode,
+    setSortBy,
+    setSortOrder,
+    setSearchFilters,
+    setSelectedItems,
+    clearSelection,
+    setShowUploadZone,
+  } = storeSlice;
+
+  return useMemo(
+    () => ({
+      dataroom: { currentDataroomId },
+      navigation: { currentFolderId, setCurrentFolderId },
+      view: { mode: viewMode, setMode: setViewMode },
+      sorting: { sortBy, setSortBy, sortOrder, setSortOrder },
+      filters: { searchFilters, setSearchFilters },
+      selection: { selectedItems, setSelectedItems, clearSelection },
+      upload: { showUploadZone, setShowUploadZone },
+    }),
+    [
+      clearSelection,
+      currentDataroomId,
+      currentFolderId,
+      searchFilters,
+      selectedItems,
+      setCurrentFolderId,
+      setSearchFilters,
+      setSelectedItems,
+      setShowUploadZone,
+      setSortBy,
+      setSortOrder,
+      setViewMode,
+      showUploadZone,
+      sortBy,
+      sortOrder,
+      viewMode,
+    ]
+  );
+};
+
+export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
+  const defaultSortBy: SortBy = "date";
+  const defaultSortOrder: SortOrder = "desc";
+  const {
+    dataroom: { currentDataroomId },
+    navigation: { currentFolderId, setCurrentFolderId },
+    view: { mode: viewMode, setMode: setViewMode },
+    sorting: { sortBy, sortOrder, setSortBy, setSortOrder },
+    filters: { searchFilters, setSearchFilters },
+    selection: { selectedItems, setSelectedItems, clearSelection },
+    upload: { showUploadZone, setShowUploadZone },
+  } = useDashboardUiState();
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [shareFiles, setShareFiles] = useState<FileItem[]>([]);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
@@ -130,7 +168,13 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
     });
     setSortBy(defaultSortBy);
     setSortOrder(defaultSortOrder);
-  }, [setSearchFilters, setSortBy, setSortOrder, defaultSortBy, defaultSortOrder]);
+  }, [
+    setSearchFilters,
+    setSortBy,
+    setSortOrder,
+    defaultSortBy,
+    defaultSortOrder,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -356,7 +400,8 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
             <div className="flex items-center justify-between text-sm font-medium">
               <span>Uploading files…</span>
               <span>
-                {Math.min(uploadProgress.completed, uploadProgress.total)} / {uploadProgress.total}
+                {Math.min(uploadProgress.completed, uploadProgress.total)} /{" "}
+                {uploadProgress.total}
               </span>
             </div>
             <Progress

@@ -14,23 +14,10 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
-import { useState } from "react";
-import type { DragEvent, MouseEvent } from "react";
 import { Input } from "@/components/ui/input";
-import {
-  Folder,
-  MoreVertical,
-  Download,
-  Trash2,
-  Share,
-  Eye,
-  Pencil,
-  Star,
-} from "lucide-react";
+import { Folder, MoreVertical, Star } from "lucide-react";
 import type { FileItem, FolderItem } from "@/lib/types";
 import {
   formatFileSize,
@@ -39,6 +26,18 @@ import {
 } from "@/lib/utils/file-utils";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import {
+  useItemRename,
+  useFileDragAndDrop,
+} from "./use-explorer-interactions";
+import {
+  ExplorerFileActions,
+  ExplorerFolderActions,
+} from "./explorer-action-items";
+import {
+  downloadFileWithFallback,
+  createMenuActionWrapper,
+} from "./explorer-utils";
 
 interface FileListViewProps {
   files: FileItem[];
@@ -80,30 +79,23 @@ export function FileListView({
   onFileStarToggle,
   onFileMove,
 }: FileListViewProps) {
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState("");
-  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  const {
+    renamingId,
+    startRename,
+    getRenameInputProps,
+    isRenaming,
+  } = useItemRename({ onRenameFile, onRenameFolder });
+  const {
+    dragOverFolderId,
+    handleDragStart,
+    handleDragEnd,
+    handleFolderDragOver,
+    handleFolderDrop,
+    handleFolderDragLeave,
+  } = useFileDragAndDrop({ onFileMove });
 
-  const startRename = (id: string, current: string) => {
-    setRenamingId(id);
-    setRenameValue(current);
-  };
+  const wrapMenuAction = createMenuActionWrapper();
 
-  const submitRename = async (id: string, type: "file" | "folder") => {
-    const name = renameValue.trim();
-    if (!name) return setRenamingId(null);
-    try {
-      if (type === "file" && onRenameFile) await onRenameFile(id, name);
-      if (type === "folder" && onRenameFolder) await onRenameFolder(id, name);
-      toast.success("Renamed");
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Rename failed";
-      toast.error(message);
-    } finally {
-      setRenamingId(null);
-    }
-  };
-  
   const allItems = [...folders, ...files];
   const allSelected =
     allItems.length > 0 && allItems.every((item) => selectedItems.has(item.id));
@@ -114,61 +106,11 @@ export function FileListView({
     ? "indeterminate"
     : false;
 
-  const handleDownload = (file: FileItem) => {
-    if (onFileDownload) {
-      onFileDownload(file);
-      return;
-    }
-    window.open(file.blob_url, "_blank", "noopener,noreferrer");
-  };
-
   const handleSelectAllToggle = () => {
     if (allSelected) {
       onDeselectAll();
     } else {
       onSelectAll();
-    }
-  };
-
-  const handleDragStart = (event: DragEvent, file: FileItem) => {
-    event.dataTransfer.setData("application/x-file-id", file.id);
-    if (file.folder_id) {
-      event.dataTransfer.setData(
-        "application/x-source-folder-id",
-        file.folder_id
-      );
-    }
-    event.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragEnd = () => {
-    setDragOverFolderId(null);
-  };
-
-  const handleFolderDragOver = (event: DragEvent, folderId: string) => {
-    if (!onFileMove) return;
-    if (!event.dataTransfer.types.includes("application/x-file-id")) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    setDragOverFolderId(folderId);
-  };
-
-  const handleFolderDrop = (event: DragEvent, folderId: string) => {
-    if (!onFileMove) return;
-    const fileId = event.dataTransfer.getData("application/x-file-id");
-    if (!fileId) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setDragOverFolderId(null);
-    void onFileMove(fileId, folderId);
-  };
-
-  const handleFolderDragLeave = (event: DragEvent, folderId: string) => {
-    const related = event.relatedTarget as Node | null;
-    if (!related || !event.currentTarget.contains(related)) {
-      if (dragOverFolderId === folderId) {
-        setDragOverFolderId(null);
-      }
     }
   };
 
@@ -178,30 +120,22 @@ export function FileListView({
     onFilePreview(file);
   };
 
-  const guardMenuAction = (action: () => void) => (
-    event: MouseEvent<HTMLElement>
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-    action();
-  };
-
   return (
     <div className="p-4 sm:p-6 overflow-hidden">
       <div className="sm:hidden">
-          <div className="flex items-center justify-between pb-3">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={headerCheckboxState}
-                onCheckedChange={handleSelectAllToggle}
-              />
+        <div className="flex items-center justify-between pb-3">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={headerCheckboxState}
+              onCheckedChange={handleSelectAllToggle}
+            />
             <span className="text-sm text-muted-foreground">
               {selectedItems.size > 0
                 ? `${selectedItems.size} selected`
                 : "Select items"}
             </span>
           </div>
-          {someSelected && (
+          {selectedItems.size > 0 && (
             <Button size="sm" variant="ghost" onClick={onDeselectAll}>
               Clear
             </Button>
@@ -232,65 +166,45 @@ export function FileListView({
                   onClick={(event) => event.stopPropagation()}
                   className="mt-1"
                 />
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div className="flex items-start gap-2">
-                  <Folder className="h-5 w-5 shrink-0 text-foreground" />
-                  <div className="min-w-0 flex-1">
-                    {renamingId === folder.id ? (
-                      <Input
-                        value={renameValue}
-                        onChange={(event) => setRenameValue(event.target.value)}
-                        onClick={(event) => event.stopPropagation()}
-                        onBlur={() => submitRename(folder.id, "folder")}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            submitRename(folder.id, "folder");
-                          }
-                          if (event.key === "Escape") setRenamingId(null);
-                        }}
-                        autoFocus
-                        className="h-8"
-                      />
-                    ) : (
-                      <p className="truncate font-medium" title={folder.name}>
-                        {folder.name}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <div className="flex items-start gap-2">
+                    <Folder className="h-5 w-5 shrink-0 text-foreground" />
+                    <div className="min-w-0 flex-1">
+                      {isRenaming(folder.id) ? (
+                        <Input
+                          {...getRenameInputProps(folder.id, "folder")}
+                          onClick={(event) => event.stopPropagation()}
+                          autoFocus
+                          className="h-8"
+                        />
+                      ) : (
+                        <p className="truncate font-medium" title={folder.name}>
+                          {folder.name}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Updated {format(new Date(folder.created_at), "MMM d, yyyy")}
                       </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Updated{" "}
-                      {format(new Date(folder.created_at), "MMM d, yyyy")}
-                    </p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        asChild
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <ExplorerFolderActions
+                          onRename={() => startRename(folder.id, folder.name)}
+                          onDelete={() => onFolderDelete(folder.id)}
+                          wrapAction={wrapMenuAction}
+                        />
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      asChild
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={guardMenuAction(() =>
-                          startRename(folder.id, folder.name)
-                        )}
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={guardMenuAction(() =>
-                          onFolderDelete(folder.id)
-                        )}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
-              </div>
               </div>
             );
           })}
@@ -320,102 +234,73 @@ export function FileListView({
                   className="mt-1"
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
-                <div className="flex items-start gap-3">
-                  <span className="text-xl" aria-hidden="true">
-                    {getFileIcon(file.mime_type, file.name)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    {renamingId === file.id ? (
-                      <Input
-                        value={renameValue}
-                        onChange={(event) => setRenameValue(event.target.value)}
-                        onClick={(event) => event.stopPropagation()}
-                        onBlur={() => submitRename(file.id, "file")}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            submitRename(file.id, "file");
-                          }
-                          if (event.key === "Escape") setRenamingId(null);
-                        }}
-                        autoFocus
-                        className="h-8"
-                      />
-                    ) : (
-                      <p
-                        className="flex items-center gap-1 truncate font-medium"
-                        title={file.name}
-                      >
-                        <span className="truncate">{file.name}</span>
-                        {file.is_starred && (
-                          <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
-                        )}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {formatFileSize(file.size)} ·{" "}
-                      {format(new Date(file.created_at), "MMM d, yyyy")}
-                    </p>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      asChild
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={guardMenuAction(() =>
-                          startRename(file.id, file.name)
-                        )}
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Rename
-                      </DropdownMenuItem>
-                      {canPreview(file.mime_type, file.name) && (
-                        <DropdownMenuItem onClick={() => handlePreview(file)}>
-                          <Eye className="h-4 w-4" />
-                          Preview
-                        </DropdownMenuItem>
-                      )}
-                      {onFileStarToggle && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            onFileStarToggle(file.id, !file.is_starred)
-                          }
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl" aria-hidden="true">
+                      {getFileIcon(file.mime_type, file.name)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      {isRenaming(file.id) ? (
+                        <Input
+                          {...getRenameInputProps(file.id, "file")}
+                          onClick={(event) => event.stopPropagation()}
+                          autoFocus
+                          className="h-8"
+                        />
+                      ) : (
+                        <p
+                          className="flex items-center gap-1 truncate font-medium"
+                          title={file.name}
                         >
-                          <Star
-                            className={cn(
-                              "h-4 w-4",
-                              file.is_starred
-                                ? "fill-amber-500 text-amber-500"
-                                : "text-muted-foreground"
-                            )}
-                          />
-                          {file.is_starred ? "Remove star" : "Add star"}
-                        </DropdownMenuItem>
+                          <span className="truncate">{file.name}</span>
+                          {file.is_starred && (
+                            <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
+                          )}
+                        </p>
                       )}
-                      <DropdownMenuItem onClick={() => handleDownload(file)}>
-                        <Download className="h-4 w-4" />
-                        Download
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onFileShare?.(file)}>
-                        <Share className="h-4 w-4" />
-                        Share
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onFileDelete(file.id)}>
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <p className="text-xs text-muted-foreground">
+                        {formatFileSize(file.size)} · {" "}
+                        {format(new Date(file.created_at), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <MoreVertical />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <ExplorerFileActions
+                          file={file}
+                          onRename={() => startRename(file.id, file.name)}
+                          onPreview={
+                            onFilePreview ? () => onFilePreview(file) : undefined
+                          }
+                          onDownload={downloadFileWithFallback(
+                            file,
+                            onFileDownload
+                          )}
+                          onShare={
+                            onFileShare ? () => onFileShare(file) : undefined
+                          }
+                          onToggleStar={
+                            onFileStarToggle
+                              ? () => onFileStarToggle(file.id, !file.is_starred)
+                              : undefined
+                          }
+                          onDelete={() => onFileDelete(file.id)}
+                          wrapAction={wrapMenuAction}
+                        />
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       </div>
 
@@ -431,7 +316,9 @@ export function FileListView({
                   />
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Size</TableHead>
+                <TableHead>Size
+*** End Patch
+                </TableHead>
                 <TableHead>Modified</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
@@ -452,90 +339,65 @@ export function FileListView({
                     data-name={folder.name}
                     aria-selected={isSelected}
                     onClick={() => onFolderOpen(folder.id)}
-                    onDragOver={(event) =>
-                      handleFolderDragOver(event, folder.id)
-                    }
+                    onDragOver={(event) => handleFolderDragOver(event, folder.id)}
                     onDrop={(event) => handleFolderDrop(event, folder.id)}
-                    onDragLeave={(event) =>
-                      handleFolderDragLeave(event, folder.id)
-                    }
+                    onDragLeave={(event) => handleFolderDragLeave(event, folder.id)}
                   >
-                  <TableCell>
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={(checked) =>
-                        onItemSelect(folder.id, !!checked)
-                      }
-                      onClick={(event) => event.stopPropagation()}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Folder className="h-5 w-5 text-foreground" />
-                      {renamingId === folder.id ? (
-                        <Input
-                          value={renameValue}
-                          onChange={(event) =>
-                            setRenameValue(event.target.value)
-                          }
-                          onClick={(event) => event.stopPropagation()}
-                          onDoubleClick={(event) => event.stopPropagation()}
-                          onBlur={() => submitRename(folder.id, "folder")}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              submitRename(folder.id, "folder");
-                            }
-                            if (event.key === "Escape") setRenamingId(null);
-                          }}
-                          autoFocus
-                          className="h-7 w-56"
-                        />
-                      ) : (
-                        <span
-                          className="truncate font-medium"
-                          title={folder.name}
-                        >
-                          {folder.name}
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">—</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {format(new Date(folder.created_at), "MMM d, yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        asChild
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) =>
+                          onItemSelect(folder.id, !!checked)
+                        }
                         onClick={(event) => event.stopPropagation()}
-                      >
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem
-                          onClick={guardMenuAction(() =>
-                            startRename(folder.id, folder.name)
-                          )}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <Folder className="h-5 w-5 text-foreground" />
+                        {isRenaming(folder.id) ? (
+                          <Input
+                            {...getRenameInputProps(folder.id, "folder")}
+                            onClick={(event) => event.stopPropagation()}
+                            onDoubleClick={(event) => event.stopPropagation()}
+                            autoFocus
+                            className="h-7 w-56"
+                          />
+                        ) : (
+                          <span
+                            className="truncate font-medium"
+                            title={folder.name}
+                          >
+                            {folder.name}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">—</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {format(new Date(folder.created_at), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          asChild
+                          onClick={(event) => event.stopPropagation()}
                         >
-                          <Pencil className="h-4 w-4" />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={guardMenuAction(() =>
-                            onFolderDelete(folder.id)
-                          )}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <ExplorerFolderActions
+                            onRename={() => startRename(folder.id, folder.name)}
+                            onDelete={() => onFolderDelete(folder.id)}
+                            wrapAction={wrapMenuAction}
+                          />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
               })}
 
               {files.map((file) => {
@@ -555,119 +417,84 @@ export function FileListView({
                     onDragEnd={handleDragEnd}
                     onDoubleClick={() => handlePreview(file)}
                   >
-                  <TableCell>
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={(checked) =>
-                        onItemSelect(file.id, !!checked)
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-lg">
-                        {getFileIcon(file.mime_type, file.name)}
-                      </span>
-                      {renamingId === file.id ? (
-                        <Input
-                          value={renameValue}
-                          onChange={(event) =>
-                            setRenameValue(event.target.value)
-                          }
-                          onClick={(event) => event.stopPropagation()}
-                          onDoubleClick={(event) => event.stopPropagation()}
-                          onBlur={() => submitRename(file.id, "file")}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              submitRename(file.id, "file");
-                            }
-                            if (event.key === "Escape") setRenamingId(null);
-                          }}
-                          autoFocus
-                          className="h-7 w-56"
-                        />
-                      ) : (
-                        <span
-                          className="flex items-center gap-1 truncate font-medium"
-                          title={file.name}
-                        >
-                          <span className="truncate">{file.name}</span>
-                          {file.is_starred && (
-                            <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
-                          )}
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) =>
+                          onItemSelect(file.id, !!checked)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <span className="text-lg">
+                          {getFileIcon(file.mime_type, file.name)}
                         </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatFileSize(file.size)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {format(new Date(file.created_at), "MMM d, yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          data-testid={`file-menu-${file.id}`}
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem
-                          onClick={guardMenuAction(() =>
-                            startRename(file.id, file.name)
-                          )}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          Rename
-                        </DropdownMenuItem>
-                        {canPreview(file.mime_type, file.name) && (
-                          <DropdownMenuItem onClick={() => handlePreview(file)}>
-                            <Eye className="h-4 w-4" />
-                            Preview
-                          </DropdownMenuItem>
-                        )}
-                        {onFileStarToggle && (
-                          <DropdownMenuItem
-                            onClick={() =>
-                              onFileStarToggle(file.id, !file.is_starred)
-                            }
+                        {isRenaming(file.id) ? (
+                          <Input
+                            {...getRenameInputProps(file.id, "file")}
+                            onClick={(event) => event.stopPropagation()}
+                            onDoubleClick={(event) => event.stopPropagation()}
+                            autoFocus
+                            className="h-7 w-56"
+                          />
+                        ) : (
+                          <span
+                            className="flex items-center gap-1 truncate font-medium"
+                            title={file.name}
                           >
-                            <Star
-                              className={cn(
-                                "h-4 w-4",
-                                file.is_starred
-                                  ? "fill-amber-500 text-amber-500"
-                                  : "text-muted-foreground"
-                              )}
-                            />
-                            {file.is_starred ? "Remove star" : "Add star"}
-                          </DropdownMenuItem>
+                            <span className="truncate">{file.name}</span>
+                            {file.is_starred && (
+                              <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
+                            )}
+                          </span>
                         )}
-                        <DropdownMenuItem onClick={() => handleDownload(file)}>
-                          <Download className="h-4 w-4" />
-                          Download
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onFileShare?.(file)}
-                          data-testid="btn-share"
-                        >
-                          <Share className="h-4 w-4" />
-                          Share
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onFileDelete(file.id)}>
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatFileSize(file.size)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {format(new Date(file.created_at), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            data-testid={`file-menu-${file.id}`}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <ExplorerFileActions
+                            file={file}
+                            onRename={() => startRename(file.id, file.name)}
+                            onPreview={
+                              onFilePreview ? () => onFilePreview(file) : undefined
+                            }
+                            onDownload={downloadFileWithFallback(
+                              file,
+                              onFileDownload
+                            )}
+                            onShare={
+                              onFileShare ? () => onFileShare(file) : undefined
+                            }
+                            onToggleStar={
+                              onFileStarToggle
+                                ? () => onFileStarToggle(file.id, !file.is_starred)
+                                : undefined
+                            }
+                            onDelete={() => onFileDelete(file.id)}
+                            wrapAction={wrapMenuAction}
+                          />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
               })}
             </TableBody>
           </Table>

@@ -80,146 +80,17 @@ export function FileExplorer({
   canCreate,
 }: FileExplorerProps) {
   // Filter and sort items
-  const filteredAndSortedItems = useMemo(() => {
-    let filteredFiles = files;
-    let filteredFolders = folders;
-
-    // Apply search query filter
-    const normalizedQuery = searchFilters.query.trim().toLowerCase();
-    if (normalizedQuery) {
-      filteredFiles = filteredFiles.filter((file) =>
-        file.name.toLowerCase().includes(normalizedQuery)
-      );
-      filteredFolders = filteredFolders.filter((folder) =>
-        folder.name.toLowerCase().includes(normalizedQuery)
-      );
-    }
-
-    // Apply file type filter
-    if (searchFilters.fileTypes.length > 0) {
-      filteredFiles = filteredFiles.filter((file) => {
-        const extension = file.name.split(".").pop()?.toLowerCase() || "";
-        return searchFilters.fileTypes.some((type) => {
-          switch (type) {
-            case "image":
-              return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(
-                extension
-              );
-            case "document":
-              return ["pdf", "doc", "docx", "txt", "rtf"].includes(extension);
-            case "spreadsheet":
-              return ["xls", "xlsx", "csv"].includes(extension);
-            case "presentation":
-              return ["ppt", "pptx"].includes(extension);
-            case "video":
-              return ["mp4", "avi", "mov", "wmv", "flv"].includes(extension);
-            case "audio":
-              return ["mp3", "wav", "flac", "aac"].includes(extension);
-            case "archive":
-              return ["zip", "rar", "7z", "tar", "gz"].includes(extension);
-            default:
-              return false;
-          }
-        });
-      });
-    }
-
-    // Apply size filter
-    if (searchFilters.sizeRange) {
-      const { min, max } = searchFilters.sizeRange;
-      filteredFiles = filteredFiles.filter((file) => {
-        const size = file.size ?? 0;
-
-        if (typeof min === "number" && size < min) {
-          return false;
-        }
-
-        if (typeof max === "number" && size > max) {
-          return false;
-        }
-
-        return true;
-      });
-    }
-
-    // Apply date range filter
-    if (searchFilters.dateRange) {
-      const normalizeDate = (value?: string | Date | null) => {
-        if (!value) return undefined;
-        return value instanceof Date ? value : new Date(value);
-      };
-
-      const fromDate = normalizeDate(searchFilters.dateRange.from);
-      const toDate = normalizeDate(searchFilters.dateRange.to);
-
-      filteredFiles = filteredFiles.filter((file) => {
-        const fileDate = new Date(file.created_at);
-        if (fromDate && fileDate < fromDate) {
-          return false;
-        }
-
-        if (toDate && fileDate > toDate) {
-          return false;
-        }
-
-        return true;
-      });
-
-      filteredFolders = filteredFolders.filter((folder) => {
-        const folderDate = new Date(folder.created_at);
-        if (fromDate && folderDate < fromDate) {
-          return false;
-        }
-
-        if (toDate && folderDate > toDate) {
-          return false;
-        }
-
-        return true;
-      });
-    }
-
-    // Apply sharing status filter
-    if (searchFilters.shared !== null) {
-      // Placeholder for future server-side sharing filter
-    }
-
-    const applyOrder = (value: number) =>
-      sortOrder === "asc" ? value : -value;
-
-    const sortedFiles = [...filteredFiles].sort((a, b) => {
-      switch (sortBy) {
-        case "name":
-          return applyOrder(a.name.localeCompare(b.name));
-        case "date":
-          return applyOrder(
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          );
-        case "size":
-          return applyOrder(a.size - b.size);
-        case "type":
-          return applyOrder(a.mime_type.localeCompare(b.mime_type));
-        default:
-          return 0;
-      }
-    });
-
-    const sortedFolders = [...filteredFolders].sort((a, b) => {
-      switch (sortBy) {
-        case "date":
-          return applyOrder(
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          );
-        default:
-          return applyOrder(a.name.localeCompare(b.name));
-      }
-    });
-
-    return {
-      files: sortedFiles,
-      folders: sortedFolders,
-    };
-  }, [files, folders, searchFilters, sortBy, sortOrder]);
+  const filteredAndSortedItems = useMemo(
+    () =>
+      filterAndSortExplorerItems({
+        files,
+        folders,
+        searchFilters,
+        sortBy,
+        sortOrder,
+      }),
+    [files, folders, searchFilters, sortBy, sortOrder]
+  );
 
   const handleItemSelect = (itemId: string, selected: boolean) => {
     onItemSelect(itemId, selected);
@@ -399,4 +270,144 @@ export function FileExplorer({
       <input {...getInputProps()} />
     </div>
   );
+}
+
+type FilterAndSortArgs = {
+  files: FileItem[];
+  folders: FolderItem[];
+  searchFilters: SearchFilters;
+  sortBy: SortBy;
+  sortOrder: SortOrder;
+};
+
+function filterAndSortExplorerItems({
+  files,
+  folders,
+  searchFilters,
+  sortBy,
+  sortOrder,
+}: FilterAndSortArgs) {
+  let filteredFiles = files;
+  let filteredFolders = folders;
+
+  const normalizedQuery = searchFilters.query.trim().toLowerCase();
+  if (normalizedQuery) {
+    filteredFiles = filteredFiles.filter((file) =>
+      file.name.toLowerCase().includes(normalizedQuery)
+    );
+    filteredFolders = filteredFolders.filter((folder) =>
+      folder.name.toLowerCase().includes(normalizedQuery)
+    );
+  }
+
+  if (searchFilters.fileTypes.length > 0) {
+    filteredFiles = filteredFiles.filter((file) =>
+      matchesFileType(file, searchFilters.fileTypes)
+    );
+  }
+
+  if (searchFilters.sizeRange) {
+    const { min, max } = searchFilters.sizeRange;
+    filteredFiles = filteredFiles.filter((file) => {
+      const size = file.size ?? 0;
+      if (typeof min === "number" && size < min) return false;
+      if (typeof max === "number" && size > max) return false;
+      return true;
+    });
+  }
+
+  if (searchFilters.dateRange) {
+    const normalizeDate = (value?: string | Date | null) =>
+      value ? (value instanceof Date ? value : new Date(value)) : undefined;
+
+    const fromDate = normalizeDate(searchFilters.dateRange.from);
+    const toDate = normalizeDate(searchFilters.dateRange.to);
+
+    filteredFiles = filteredFiles.filter((file) =>
+      isWithinRange(new Date(file.created_at), fromDate, toDate)
+    );
+
+    filteredFolders = filteredFolders.filter((folder) =>
+      isWithinRange(new Date(folder.created_at), fromDate, toDate)
+    );
+  }
+
+  const sortedFiles = sortFiles(filteredFiles, sortBy, sortOrder);
+  const sortedFolders = sortFolders(filteredFolders, sortBy, sortOrder);
+
+  return { files: sortedFiles, folders: sortedFolders };
+}
+
+function matchesFileType(file: FileItem, filters: string[]) {
+  const extension = file.name.split(".").pop()?.toLowerCase() || "";
+  return filters.some((type) => {
+    switch (type) {
+      case "image":
+        return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(
+          extension
+        );
+      case "document":
+        return ["pdf", "doc", "docx", "txt", "rtf"].includes(extension);
+      case "spreadsheet":
+        return ["xls", "xlsx", "csv"].includes(extension);
+      case "presentation":
+        return ["ppt", "pptx"].includes(extension);
+      case "video":
+        return ["mp4", "avi", "mov", "wmv", "flv"].includes(extension);
+      case "audio":
+        return ["mp3", "wav", "flac", "aac"].includes(extension);
+      case "archive":
+        return ["zip", "rar", "7z", "tar", "gz"].includes(extension);
+      default:
+        return false;
+    }
+  });
+}
+
+function isWithinRange(
+  date: Date,
+  fromDate?: Date,
+  toDate?: Date
+) {
+  if (fromDate && date < fromDate) return false;
+  if (toDate && date > toDate) return false;
+  return true;
+}
+
+function sortFiles(files: FileItem[], sortBy: SortBy, sortOrder: SortOrder) {
+  const applyOrder = (value: number) => (sortOrder === "asc" ? value : -value);
+  return [...files].sort((a, b) => {
+    switch (sortBy) {
+      case "name":
+        return applyOrder(a.name.localeCompare(b.name));
+      case "date":
+        return applyOrder(
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      case "size":
+        return applyOrder(a.size - b.size);
+      case "type":
+        return applyOrder(a.mime_type.localeCompare(b.mime_type));
+      default:
+        return 0;
+    }
+  });
+}
+
+function sortFolders(
+  folders: FolderItem[],
+  sortBy: SortBy,
+  sortOrder: SortOrder
+) {
+  const applyOrder = (value: number) => (sortOrder === "asc" ? value : -value);
+  return [...folders].sort((a, b) => {
+    switch (sortBy) {
+      case "date":
+        return applyOrder(
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      default:
+        return applyOrder(a.name.localeCompare(b.name));
+    }
+  });
 }

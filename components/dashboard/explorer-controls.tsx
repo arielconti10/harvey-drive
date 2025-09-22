@@ -83,7 +83,6 @@ export function ExplorerControls({
 
   const handleCreateFolder = useCallback(
     async (name: string) => {
-      if (!onCreateFolder) return;
       await onCreateFolder(name);
     },
     [onCreateFolder]
@@ -267,10 +266,8 @@ export function ExplorerControls({
                     Open Upload Zone
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    disabled={!canCreate || !onCreateFolder}
-                    onClick={() =>
-                      canCreate && onCreateFolder && setCreateFolderOpen(true)
-                    }
+                    disabled={!canCreate}
+                    onClick={() => canCreate && setCreateFolderOpen(true)}
                     data-testid="btn-new-folder"
                   >
                     <FolderPlus className="h-4 w-4" />
