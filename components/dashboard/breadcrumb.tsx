@@ -9,10 +9,15 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Home } from "lucide-react";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useMemo } from "react";
 import type { DragEvent } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import {
+  buildFolderPathQueryKey,
+  fetchFolderPath,
+} from "@/lib/api/file-queries";
 
 interface BreadcrumbProps {
   currentFolderId: string | null;
@@ -37,76 +42,37 @@ export function Breadcrumb({
   onFileMove,
   className,
 }: BreadcrumbProps) {
-  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([
-    { id: null, name: "My Files" },
-  ]);
+  const specialLabel = currentFolderId
+    ? SPECIAL_VIEWS[currentFolderId]
+    : undefined;
 
-  useEffect(() => {
-    const abortController = new AbortController();
-    let isActive = true;
+  const { data: pathData, isLoading, isError } = useQuery({
+    queryKey: currentFolderId
+      ? buildFolderPathQueryKey(currentFolderId)
+      : ["folderPath", { folderId: null }],
+    queryFn: () => fetchFolderPath(currentFolderId as string),
+    enabled: Boolean(currentFolderId && !specialLabel),
+    staleTime: 30_000,
+  });
 
-    async function loadBreadcrumbs() {
-      if (!currentFolderId) {
-        if (isActive) {
-          setBreadcrumbs([{ id: null, name: "My Files" }]);
-        }
-        return;
-      }
+  const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
+    const base = [{ id: null, name: "My Files" }];
+    if (!currentFolderId) return base;
 
-      const specialLabel = SPECIAL_VIEWS[currentFolderId];
-      if (specialLabel) {
-        if (isActive) {
-          setBreadcrumbs([
-            { id: null, name: "My Files" },
-            { id: currentFolderId, name: specialLabel },
-          ]);
-        }
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `/api/folders/path?folderId=${currentFolderId}`,
-          { signal: abortController.signal }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to load folder path");
-        }
-
-        const data = await response.json();
-        const path = Array.isArray(data.path) ? data.path : [];
-
-        const items =
-          path.length > 0
-            ? path.map((item: { id: string; name: string }) => ({
-                id: item.id,
-                name: item.name,
-              }))
-            : [{ id: currentFolderId, name: "Current Folder" }];
-
-        if (isActive) {
-          setBreadcrumbs([{ id: null, name: "My Files" }, ...items]);
-        }
-      } catch (error) {
-        if ((error as Error)?.name === "AbortError") return;
-        console.error("Failed to fetch breadcrumb path", error);
-        if (isActive) {
-          setBreadcrumbs([
-            { id: null, name: "My Files" },
-            { id: currentFolderId, name: "Current Folder" },
-          ]);
-        }
-      }
+    if (specialLabel) {
+      return [...base, { id: currentFolderId, name: specialLabel }];
     }
 
-    loadBreadcrumbs();
+    if (isLoading) {
+      return [...base, { id: currentFolderId, name: "Loading…" }];
+    }
 
-    return () => {
-      isActive = false;
-      abortController.abort();
-    };
-  }, [currentFolderId]);
+    if (isError || !pathData || pathData.length === 0) {
+      return [...base, { id: currentFolderId, name: "Current Folder" }];
+    }
+
+    return [...base, ...pathData];
+  }, [currentFolderId, pathData, isError, isLoading, specialLabel]);
 
   const handleDragOver = (event: DragEvent) => {
     if (!onFileMove) return;

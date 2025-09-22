@@ -13,6 +13,11 @@ export interface FoldersQueryArgs {
   view: DashboardView;
 }
 
+export interface FolderPathItem {
+  id: string;
+  name: string;
+}
+
 const normalizeSearch = (value?: string) => value?.trim() ?? "";
 
 const effectiveFolderId = (view: DashboardView, folderId?: string | null) =>
@@ -45,6 +50,9 @@ export const buildFoldersQueryKey = ({
     view,
   },
 ] as const;
+
+export const buildFolderPathQueryKey = (folderId: string) =>
+  ["folderPath", { folderId }] as const;
 
 export const fetchFilesList = async ({
   folderId,
@@ -113,4 +121,17 @@ export const fetchFoldersList = async ({
   if (!res.ok) throw new Error("Failed to fetch folders");
   const data = await res.json();
   return data.folders || [];
+};
+
+export const fetchFolderPath = async (
+  folderId: string
+): Promise<FolderPathItem[]> => {
+  const res = await fetch(`/api/folders/path?folderId=${folderId}`);
+  if (!res.ok) throw new Error("Failed to fetch folder path");
+  const data = await res.json();
+  const path = Array.isArray(data.path) ? data.path : [];
+  return path.map((item: { id: string; name: string }) => ({
+    id: item.id,
+    name: item.name,
+  }));
 };
