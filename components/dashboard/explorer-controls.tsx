@@ -1,24 +1,14 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import {
   Upload,
   FolderPlus,
@@ -30,6 +20,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { AdvancedSearch } from "./advanced-search";
+import { CreateFolderDialog } from "./create-folder-dialog";
 import type {
   ViewMode,
   SortBy,
@@ -77,7 +68,6 @@ export function ExplorerControls({
   onReset,
   view = "files",
 }: ExplorerControlsProps) {
-  const [folderName, setFolderName] = useState("");
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,13 +81,13 @@ export function ExplorerControls({
     }
   };
 
-  const handleCreateFolder = () => {
-    if (folderName.trim()) {
-      onCreateFolder(folderName.trim());
-      setFolderName("");
-      setCreateFolderOpen(false);
-    }
-  };
+  const handleCreateFolder = useCallback(
+    async (name: string) => {
+      if (!onCreateFolder) return;
+      await onCreateFolder(name);
+    },
+    [onCreateFolder]
+  );
 
   const getViewIcon = (mode: ViewMode) => {
     switch (mode) {
@@ -277,8 +267,10 @@ export function ExplorerControls({
                     Open Upload Zone
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    disabled={!canCreate}
-                    onClick={() => canCreate && setCreateFolderOpen(true)}
+                    disabled={!canCreate || !onCreateFolder}
+                    onClick={() =>
+                      canCreate && onCreateFolder && setCreateFolderOpen(true)
+                    }
                     data-testid="btn-new-folder"
                   >
                     <FolderPlus className="h-4 w-4" />
@@ -307,41 +299,11 @@ export function ExplorerControls({
         </div>
       </div>
 
-      <Dialog open={createFolderOpen} onOpenChange={setCreateFolderOpen}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>Create New Folder</DialogTitle>
-            <DialogDescription>
-              Name the folder you want to add to the current location.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="folderName">Folder Name</Label>
-              <Input
-                id="folderName"
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-                placeholder="Enter folder name"
-                autoFocus
-                onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCreateFolderOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleCreateFolder} disabled={!folderName.trim()}>
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateFolderDialog
+        open={createFolderOpen}
+        onOpenChange={setCreateFolderOpen}
+        onCreate={handleCreateFolder}
+      />
     </div>
   );
 }

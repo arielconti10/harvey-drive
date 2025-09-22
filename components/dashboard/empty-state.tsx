@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Upload, FolderPlus, Search, HardDrive } from "lucide-react";
 import type { DashboardView } from "@/lib/types";
+import { CreateFolderDialog } from "./create-folder-dialog";
 
 interface EmptyStateProps {
   searchQuery?: string;
@@ -23,7 +23,6 @@ export function EmptyState({
   view = "files",
 }: EmptyStateProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [folderName, setFolderName] = useState("");
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
 
   const handleUploadClick = () => {
@@ -43,13 +42,13 @@ export function EmptyState({
     }
   };
 
-  const handleCreateFolder = async () => {
-    if (!folderName.trim() || !onCreateFolder) return;
-
-    await onCreateFolder(folderName.trim());
-    setFolderName("");
-    setCreateFolderOpen(false);
-  };
+  const handleCreateFolder = useCallback(
+    async (name: string) => {
+      if (!onCreateFolder) return;
+      await onCreateFolder(name);
+    },
+    [onCreateFolder]
+  );
 
   if (searchQuery) {
     return (
@@ -114,6 +113,7 @@ export function EmptyState({
               canCreate && onCreateFolder && setCreateFolderOpen(true)
             }
             disabled={!canCreate || !onCreateFolder}
+            data-testid="btn-new-folder"
           >
             <FolderPlus />
             New folder
@@ -129,38 +129,12 @@ export function EmptyState({
         className="hidden"
       />
 
-      {allowActions && createFolderOpen && onCreateFolder && (
-        <div className="mt-8 w-full max-w-sm rounded-lg border border-border bg-card p-4 text-left shadow-sm">
-          <h4 className="text-sm font-semibold text-foreground">New folder</h4>
-          <p className="text-xs text-muted-foreground">
-            Name the folder you want to add to this location.
-          </p>
-          <Input
-            className="mt-3"
-            value={folderName}
-            onChange={(event) => setFolderName(event.target.value)}
-            placeholder="Enter folder name"
-            onKeyDown={(event) =>
-              event.key === "Enter" && handleCreateFolder()
-            }
-          />
-          <div className="mt-3 flex items-center justify-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCreateFolderOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleCreateFolder}
-              disabled={!folderName.trim()}
-            >
-              Create
-            </Button>
-          </div>
-        </div>
+      {allowActions && onCreateFolder && (
+        <CreateFolderDialog
+          open={createFolderOpen}
+          onOpenChange={setCreateFolderOpen}
+          onCreate={handleCreateFolder}
+        />
       )}
     </div>
   );

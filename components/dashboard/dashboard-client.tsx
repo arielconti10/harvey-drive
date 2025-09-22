@@ -12,6 +12,7 @@ import { ShareDialog } from "../sharing/share-dialog";
 import { useFiles } from "@/lib/hooks/use-files";
 import { useDownloadManager } from "@/lib/hooks/use-download-manager";
 import { useUiStore } from "@/lib/store/ui";
+import { useShallow } from "zustand/react/shallow";
 import { toast } from "sonner";
 import { ExplorerControls } from "./explorer-controls";
 import { Progress } from "@/components/ui/progress";
@@ -19,22 +20,49 @@ import { Progress } from "@/components/ui/progress";
 export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
   const defaultSortBy: SortBy = "date";
   const defaultSortOrder: SortOrder = "desc";
-  const currentFolderId = useUiStore((s) => s.currentFolderId);
-  const currentDataroomId = useUiStore((s) => s.currentDataroomId);
-  const setCurrentFolderId = useUiStore((s) => s.setCurrentFolderId);
-  const viewMode = useUiStore((s) => s.viewMode);
-  const setViewMode = useUiStore((s) => s.setViewMode);
-  const sortBy = useUiStore((s) => s.sortBy);
-  const setSortBy = useUiStore((s) => s.setSortBy);
-  const sortOrder = useUiStore((s) => s.sortOrder);
-  const setSortOrder = useUiStore((s) => s.setSortOrder);
-  const searchFilters = useUiStore((s) => s.searchFilters);
-  const setSearchFilters = useUiStore((s) => s.setSearchFilters);
-  const selectedItems = useUiStore((s) => s.selectedItems);
-  const setSelectedItems = useUiStore((s) => s.setSelectedItems);
-  const clearSelection = useUiStore((s) => s.clearSelection);
-  const showUploadZone = useUiStore((s) => s.showUploadZone);
-  const setShowUploadZone = useUiStore((s) => s.setShowUploadZone);
+  const {
+    currentFolderId,
+    currentDataroomId,
+    viewMode,
+    sortBy,
+    sortOrder,
+    searchFilters,
+    selectedItems,
+    showUploadZone,
+  } = useUiStore(
+    useShallow((state) => ({
+      currentFolderId: state.currentFolderId,
+      currentDataroomId: state.currentDataroomId,
+      viewMode: state.viewMode,
+      sortBy: state.sortBy,
+      sortOrder: state.sortOrder,
+      searchFilters: state.searchFilters,
+      selectedItems: state.selectedItems,
+      showUploadZone: state.showUploadZone,
+    }))
+  );
+
+  const {
+    setCurrentFolderId,
+    setViewMode,
+    setSortBy,
+    setSortOrder,
+    setSearchFilters,
+    setSelectedItems,
+    clearSelection,
+    setShowUploadZone,
+  } = useUiStore(
+    useShallow((state) => ({
+      setCurrentFolderId: state.setCurrentFolderId,
+      setViewMode: state.setViewMode,
+      setSortBy: state.setSortBy,
+      setSortOrder: state.setSortOrder,
+      setSearchFilters: state.setSearchFilters,
+      setSelectedItems: state.setSelectedItems,
+      clearSelection: state.clearSelection,
+      setShowUploadZone: state.setShowUploadZone,
+    }))
+  );
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [shareFiles, setShareFiles] = useState<FileItem[]>([]);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
