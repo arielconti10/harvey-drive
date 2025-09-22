@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { HardDrive, RefreshCcw, Home } from "lucide-react";
+import { HardDrive, RefreshCcw, Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ErrorPageProps {
@@ -33,9 +33,15 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
       <main className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
         <div className="space-y-6">
           <span className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm font-medium text-muted-foreground">
-            Something went wrong
+            <span
+              className="mr-2 inline-block h-2 w-2 rounded-full bg-destructive"
+              aria-hidden="true"
+            />
+            500 — Something went wrong
           </span>
-          <h1 className="text-4xl font-serif md:text-5xl">We hit an unexpected snag</h1>
+          <h1 className="text-4xl font-serif md:text-5xl">
+            We hit an unexpected snag
+          </h1>
           <p className="mx-auto max-w-xl text-base text-muted-foreground">
             Our team has been notified. You can try again or head back to your
             dashboard while we get things sorted out.
@@ -54,6 +60,15 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
                 className="flex w-full items-center justify-center gap-2 bg-transparent"
               >
                 Go to dashboard
+              </Button>
+            </Link>
+            <Link href="/" className="inline-flex">
+              <Button
+                variant="outline"
+                className="flex w-full items-center justify-center gap-2 bg-transparent"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Back to home
               </Button>
             </Link>
           </div>
