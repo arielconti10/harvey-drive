@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -307,7 +308,7 @@ export function ExplorerControls({
       </div>
 
       <Dialog open={createFolderOpen} onOpenChange={setCreateFolderOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>Create New Folder</DialogTitle>
             <DialogDescription>
@@ -315,31 +316,30 @@ export function ExplorerControls({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="folderName">Folder Name</Label>
               <Input
                 id="folderName"
                 value={folderName}
                 onChange={(e) => setFolderName(e.target.value)}
                 placeholder="Enter folder name"
+                autoFocus
                 onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
               />
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setCreateFolderOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateFolder}
-                disabled={!folderName.trim()}
-              >
-                Create
-              </Button>
-            </div>
           </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCreateFolderOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreateFolder} disabled={!folderName.trim()}>
+              Create
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

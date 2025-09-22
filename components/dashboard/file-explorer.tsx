@@ -353,6 +353,8 @@ export function FileExplorer({
               onFileDelete={onFileDelete}
               onFolderDelete={onFolderDelete}
               onFileMove={onFileMove}
+              searchQuery={searchFilters.query}
+              view={view ?? "files"}
             />
           );
         default:

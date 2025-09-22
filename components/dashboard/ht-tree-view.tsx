@@ -44,6 +44,15 @@ import {
   fetchFilesList,
   fetchFoldersList,
 } from "@/lib/api/file-queries";
+import {
+  fileSignature,
+  folderSignature,
+  invalidateFilesForFolder,
+  invalidateFoldersForParent,
+  listEquals,
+  normalizeSearch,
+  resolveQueryData,
+} from "@/lib/api/query-helpers";
 
 type FolderPayload = {
   kind: "folder";
@@ -70,6 +79,8 @@ interface HtTreeViewProps {
   onFileMove?: (fileId: string, targetFolderId: string | null) => void;
   files: FileItem[];
   folders: FolderItem[];
+  searchQuery?: string;
+  view?: DashboardView;
   onRenameFile?: (id: string, name: string) => Promise<FileItem>;
   onRenameFolder?: (id: string, name: string) => Promise<FolderItem>;
 }
@@ -80,7 +91,11 @@ export function HtTreeView(props: HtTreeViewProps) {
   const setCurrentFolderId = useUiStore((s) => s.setCurrentFolderId);
   const setSelectedItemsStore = useUiStore((s) => s.setSelectedItems);
   const queryClient = useQueryClient();
-  const treeView: DashboardView = "files";
+  const treeView: DashboardView = props.view ?? "files";
+  const normalizedSearch = React.useMemo(
+    () => normalizeSearch(props.searchQuery),
+    [props.searchQuery]
+  );
   const itemCacheRef = React.useRef(new Map<string, ItemPayload>());
   const prevSelectedItemsRef = React.useRef<string[]>([]);
   const [dragOverFolderId, setDragOverFolderId] = React.useState<string | null>(
@@ -93,16 +108,30 @@ export function HtTreeView(props: HtTreeViewProps) {
       dataroomId,
       view: treeView,
     });
-    queryClient.setQueryData(foldersKey, props.folders);
+    const cachedFolders = queryClient.getQueryData<FolderItem[]>(foldersKey);
+    if (!listEquals(cachedFolders, props.folders, folderSignature)) {
+      queryClient.setQueryData(foldersKey, props.folders);
+    }
 
     const filesKey = buildFilesQueryKey({
       folderId: currentFolderId ?? null,
       dataroomId,
-      search: "",
+      search: normalizedSearch,
       view: treeView,
     });
-    queryClient.setQueryData(filesKey, props.files);
-  }, [currentFolderId, dataroomId, props.folders, props.files, queryClient]);
+    const cachedFiles = queryClient.getQueryData<FileItem[]>(filesKey);
+    if (!listEquals(cachedFiles, props.files, fileSignature)) {
+      queryClient.setQueryData(filesKey, props.files);
+    }
+  }, [
+    currentFolderId,
+    dataroomId,
+    props.folders,
+    props.files,
+    normalizedSearch,
+    queryClient,
+    treeView,
+  ]);
 
   const tree = useTree<ItemPayload>({
     rootItemId: "root",
@@ -145,18 +174,20 @@ export function HtTreeView(props: HtTreeViewProps) {
           folderId: parentId,
           dataroomId,
           view: treeView,
-          search: "",
+          search: normalizedSearch,
         };
 
         const [folders, files] = await Promise.all([
-          queryClient.fetchQuery({
-            queryKey: buildFoldersQueryKey(folderArgs),
-            queryFn: () => fetchFoldersList(folderArgs),
-          }),
-          queryClient.fetchQuery({
-            queryKey: buildFilesQueryKey(fileArgs),
-            queryFn: () => fetchFilesList(fileArgs),
-          }),
+          resolveQueryData(
+            queryClient,
+            buildFoldersQueryKey(folderArgs),
+            () => fetchFoldersList(folderArgs)
+          ),
+          resolveQueryData(
+            queryClient,
+            buildFilesQueryKey(fileArgs),
+            () => fetchFilesList(fileArgs)
+          ),
         ]);
 
         const childrenIds: string[] = [];
@@ -207,6 +238,7 @@ export function HtTreeView(props: HtTreeViewProps) {
         return;
       }
       try {
+        const targetDataroomId = dataroomId ?? null;
         if (data.kind === "file") {
           if (!props.onRenameFile) return;
           const updated = await props.onRenameFile(data.id, trimmed);
@@ -216,6 +248,12 @@ export function HtTreeView(props: HtTreeViewProps) {
             name: updated.name,
             file: updated,
           });
+          await invalidateFilesForFolder(
+            queryClient,
+            treeView,
+            updated.folder_id ?? null,
+            targetDataroomId
+          );
         } else {
           if (!props.onRenameFolder || !data.id) return;
           const updated = await props.onRenameFolder(data.id, trimmed);
@@ -225,6 +263,15 @@ export function HtTreeView(props: HtTreeViewProps) {
             name: updated.name,
             created_at: updated.created_at,
           });
+          const parentInstance = itemInstance.getParent?.();
+          const parentIdRaw: string | null | undefined = parentInstance?.getId?.();
+          const parentId = !parentIdRaw || parentIdRaw === "root" ? null : parentIdRaw;
+          await invalidateFoldersForParent(
+            queryClient,
+            treeView,
+            parentId,
+            targetDataroomId
+          );
         }
         toast.success("Renamed");
       } catch (error) {
