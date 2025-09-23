@@ -26,6 +26,7 @@ export function SharedFileViewer({
   expiresAt,
 }: SharedFileViewerProps) {
   const [showPreview, setShowPreview] = useState(false);
+  const [downloadFailed, setDownloadFailed] = useState(false);
 
   const handleDownload = () => {
     try {
@@ -35,8 +36,9 @@ export function SharedFileViewer({
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-    } catch (error) {
-      console.error("Failed to open download anchor", error);
+      setDownloadFailed(false);
+    } catch {
+      setDownloadFailed(true);
       window.open(file.blob_url, "_blank", "noopener,noreferrer");
     }
   };
@@ -140,6 +142,11 @@ export function SharedFileViewer({
                 Download
               </Button>
             </div>
+            {downloadFailed && (
+              <p className="text-sm text-destructive">
+                We opened the file in a new tab because the download could not be triggered automatically.
+              </p>
+            )}
 
             {/* Permission Info */}
             <div className="bg-secondary rounded-lg p-4">

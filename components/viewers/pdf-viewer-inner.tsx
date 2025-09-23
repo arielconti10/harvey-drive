@@ -40,9 +40,9 @@ export function PdfViewerInner({ file, onError }: PDFViewerProps) {
   }, [file.blob_url]);
 
   const handleDocumentError = (error: Error) => {
-    console.error("Failed to load PDF", error);
     setLoading(false);
-    onError("Failed to load document");
+    const message = error instanceof Error ? error.message : "Failed to load document";
+    onError(message || "Failed to load document");
   };
 
   const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.2, 3));

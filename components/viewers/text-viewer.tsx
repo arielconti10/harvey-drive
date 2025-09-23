@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, WrapText } from "lucide-react";
 import type { FileItem } from "@/lib/types";
 import { getFileExtension } from "@/lib/utils/file-utils";
+import { toast } from "sonner";
 
 interface TextViewerProps {
   file: FileItem;
@@ -90,7 +91,6 @@ export function TextViewer({
         if (error instanceof DOMException && error.name === "AbortError") {
           return;
         }
-        console.error("Failed to fetch text file:", error);
         onError("Failed to load text file");
       } finally {
         if (!isCancelled) {
@@ -120,7 +120,10 @@ export function TextViewer({
       await navigator.clipboard.writeText(content);
       setCopyStatus("copied");
     } catch (error) {
-      console.error("Failed to copy text:", error);
+      const message =
+        error instanceof Error ? error.message : "Unable to copy text to clipboard.";
+      toast.error(message);
+      setCopyStatus("idle");
     }
   };
 

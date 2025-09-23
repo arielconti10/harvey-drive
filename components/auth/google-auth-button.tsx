@@ -1,8 +1,9 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
-import { useState } from "react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false)
@@ -20,7 +21,9 @@ export function GoogleAuthButton() {
       })
       if (error) throw error
     } catch (error) {
-      console.error("Google auth error:", error)
+      const message =
+        error instanceof Error ? error.message : "Google sign-in failed. Please try again."
+      toast.error(message)
     } finally {
       setIsLoading(false)
     }

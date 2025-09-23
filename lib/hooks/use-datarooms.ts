@@ -5,6 +5,39 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Dataroom } from "@/lib/types";
 import { useUiStore } from "@/lib/store/ui";
 
+async function getErrorMessage(response: Response, fallback: string) {
+  const message = fallback;
+  try {
+    const raw = await response.text();
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return message;
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "object" && parsed !== null) {
+        const candidate = parsed as Record<string, unknown>;
+        const error = candidate.error;
+        if (typeof error === "string" && error.trim()) {
+          return error.trim();
+        }
+        const msg = candidate.message;
+        if (typeof msg === "string" && msg.trim()) {
+          return msg.trim();
+        }
+      } else if (typeof parsed === "string" && parsed.trim()) {
+        return parsed.trim();
+      }
+    } catch {
+      // not JSON, fall through to trimmed text
+    }
+    return trimmed;
+  } catch {
+    // ignore read errors
+  }
+  return message;
+}
+
 export function useDatarooms(initialData?: Dataroom[]) {
   const qc = useQueryClient();
   const ensureDataroomSelection = useUiStore((s) => s.ensureDataroomSelection);
@@ -13,8 +46,11 @@ export function useDatarooms(initialData?: Dataroom[]) {
     queryKey: ["datarooms"],
     queryFn: async () => {
       const res = await fetch("/api/datarooms/list");
-      if (!res.ok) throw new Error("Failed to fetch datarooms");
-      const data = await res.json();
+      if (!res.ok) {
+        const message = await getErrorMessage(res, "Failed to fetch datarooms");
+        throw new Error(message);
+      }
+      const data = (await res.json()) as { datarooms?: Dataroom[] };
       return data.datarooms ?? [];
     },
     staleTime: 30_000,
@@ -29,8 +65,8 @@ export function useDatarooms(initialData?: Dataroom[]) {
         body: JSON.stringify({ name }),
       });
       if (!res.ok) {
-        const e = await res.json();
-        throw new Error(e.error || "Failed to create dataroom");
+        const message = await getErrorMessage(res, "Failed to create dataroom");
+        throw new Error(message);
       }
       return (await res.json()) as Dataroom;
     },
@@ -51,8 +87,8 @@ export function useDatarooms(initialData?: Dataroom[]) {
         body: JSON.stringify({ dataroomId }),
       });
       if (!res.ok) {
-        const e = await res.json();
-        throw new Error(e.error || "Failed to delete dataroom");
+        const message = await getErrorMessage(res, "Failed to delete dataroom");
+        throw new Error(message);
       }
       return true;
     },
@@ -69,8 +105,8 @@ export function useDatarooms(initialData?: Dataroom[]) {
         body: JSON.stringify({ dataroomId: id, name }),
       });
       if (!res.ok) {
-        const e = await res.json();
-        throw new Error(e.error || "Failed to rename dataroom");
+        const message = await getErrorMessage(res, "Failed to rename dataroom");
+        throw new Error(message);
       }
       return (await res.json()) as Dataroom;
     },

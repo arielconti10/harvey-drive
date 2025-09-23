@@ -237,7 +237,6 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
   };
 
   const handleUploadError = (error: Error) => {
-    console.error("Upload failed:", error);
     toast.error(error.message || "Upload failed");
   };
 
@@ -271,7 +270,6 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
       await createFolder(name, currentFolderId);
       toast.success("Folder created");
     } catch (error) {
-      console.error("Create folder failed:", error);
       toast.error((error as Error)?.message || "Create folder failed");
     }
   };
@@ -284,7 +282,6 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
       await moveFile(fileId, targetFolderId);
       toast.success("File moved");
     } catch (error) {
-      console.error("Move file failed:", error);
       toast.error((error as Error)?.message || "Move failed");
     }
   };
@@ -294,7 +291,6 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
       await toggleStar(fileId, starred);
       toast.success(starred ? "Added to starred" : "Removed from starred");
     } catch (error) {
-      console.error("Toggle star failed:", error);
       toast.error((error as Error)?.message || "Update failed");
     }
   };
@@ -340,7 +336,6 @@ export function DashboardClient({ view = "files" }: { view?: DashboardView }) {
       ]);
       toast.success("Items deleted");
     } catch (error) {
-      console.error("Bulk delete failed:", error);
       toast.error((error as Error)?.message || "Delete failed");
     }
   };

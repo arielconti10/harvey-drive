@@ -16,8 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Folder, MoreVertical, Star } from "lucide-react";
+import { Folder, MoreVertical } from "lucide-react";
 import type { FileItem, FolderItem } from "@/lib/types";
 import {
   formatFileSize,
@@ -35,6 +34,13 @@ import {
   downloadFileWithFallback,
   createMenuActionWrapper,
 } from "./explorer-utils";
+import { ExplorerSelectionCheckbox } from "./explorer-selection-checkbox";
+import {
+  ExplorerFileMeta,
+  ExplorerFileName,
+  ExplorerFolderMeta,
+  ExplorerFolderName,
+} from "./explorer-item-labels";
 
 interface FileListViewProps {
   files: FileItem[];
@@ -152,34 +158,30 @@ export function FileListView({
                 data-testid="folder-row"
                 data-name={folder.name}
               >
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={(checked) =>
-                    onItemSelect(folder.id, !!checked)
-                  }
-                  onClick={(event) => event.stopPropagation()}
+                <ExplorerSelectionCheckbox
+                  itemId={folder.id}
+                  isSelected={isSelected}
+                  onToggle={onItemSelect}
                   className="mt-1"
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <div className="flex items-start gap-2">
                     <Folder className="h-5 w-5 shrink-0 text-foreground" />
                     <div className="min-w-0 flex-1">
-                      {isRenaming(folder.id) ? (
-                        <Input
-                          {...getRenameInputProps(folder.id, "folder")}
-                          onClick={(event) => event.stopPropagation()}
-                          autoFocus
-                          className="h-8"
-                        />
-                      ) : (
-                        <p className="truncate font-medium" title={folder.name}>
-                          {folder.name}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Updated{" "}
-                        {format(new Date(folder.created_at), "MMM d, yyyy")}
-                      </p>
+                      <ExplorerFolderName
+                        folder={folder}
+                        isRenaming={isRenaming(folder.id)}
+                        renameInputProps={getRenameInputProps(
+                          folder.id,
+                          "folder"
+                        )}
+                        textClassName="font-medium"
+                        inputClassName="h-8"
+                      />
+                      <ExplorerFolderMeta
+                        folder={folder}
+                        prefix="Updated "
+                      />
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger
@@ -221,12 +223,10 @@ export function FileListView({
                 data-testid="file-row"
                 data-name={file.name}
               >
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={(checked) =>
-                    onItemSelect(file.id, !!checked)
-                  }
-                  onClick={(event) => event.stopPropagation()}
+                <ExplorerSelectionCheckbox
+                  itemId={file.id}
+                  isSelected={isSelected}
+                  onToggle={onItemSelect}
                   className="mt-1"
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -235,28 +235,14 @@ export function FileListView({
                       {getFileIcon(file.mime_type, file.name)}
                     </span>
                     <div className="min-w-0 flex-1">
-                      {isRenaming(file.id) ? (
-                        <Input
-                          {...getRenameInputProps(file.id, "file")}
-                          onClick={(event) => event.stopPropagation()}
-                          autoFocus
-                          className="h-8"
-                        />
-                      ) : (
-                        <p
-                          className="flex items-center gap-1 truncate font-medium"
-                          title={file.name}
-                        >
-                          <span className="truncate">{file.name}</span>
-                          {file.is_starred && (
-                            <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
-                          )}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(file.size)} ·{" "}
-                        {format(new Date(file.created_at), "MMM d, yyyy")}
-                      </p>
+                      <ExplorerFileName
+                        file={file}
+                        isRenaming={isRenaming(file.id)}
+                        renameInputProps={getRenameInputProps(file.id, "file")}
+                        textClassName="font-medium"
+                        inputClassName="h-8"
+                      />
+                      <ExplorerFileMeta file={file} />
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -345,34 +331,23 @@ export function FileListView({
                     }
                   >
                     <TableCell>
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(checked) =>
-                          onItemSelect(folder.id, !!checked)
-                        }
-                        onClick={(event) => event.stopPropagation()}
-                      />
+                  <ExplorerSelectionCheckbox
+                    itemId={folder.id}
+                    isSelected={isSelected}
+                    onToggle={onItemSelect}
+                  />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Folder className="h-5 w-5 text-foreground" />
-                        {isRenaming(folder.id) ? (
-                          <Input
-                            {...getRenameInputProps(folder.id, "folder")}
-                            onClick={(event) => event.stopPropagation()}
-                            onDoubleClick={(event) => event.stopPropagation()}
-                            autoFocus
-                            className="h-7 w-56"
-                          />
-                        ) : (
-                          <span
-                            className="truncate font-medium"
-                            title={folder.name}
-                          >
-                            {folder.name}
-                          </span>
-                        )}
-                      </div>
+                    <div className="flex items-center space-x-3">
+                      <Folder className="h-5 w-5 text-foreground" />
+                      <ExplorerFolderName
+                        folder={folder}
+                        isRenaming={isRenaming(folder.id)}
+                        renameInputProps={getRenameInputProps(folder.id, "folder")}
+                        textClassName="font-medium"
+                        inputClassName="h-7 w-56"
+                      />
+                    </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">—</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -419,37 +394,24 @@ export function FileListView({
                     onDoubleClick={() => handlePreview(file)}
                   >
                     <TableCell>
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(checked) =>
-                          onItemSelect(file.id, !!checked)
-                        }
-                      />
+                  <ExplorerSelectionCheckbox
+                    itemId={file.id}
+                    isSelected={isSelected}
+                    onToggle={onItemSelect}
+                  />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <span className="text-lg">
                           {getFileIcon(file.mime_type, file.name)}
                         </span>
-                        {isRenaming(file.id) ? (
-                          <Input
-                            {...getRenameInputProps(file.id, "file")}
-                            onClick={(event) => event.stopPropagation()}
-                            onDoubleClick={(event) => event.stopPropagation()}
-                            autoFocus
-                            className="h-7 w-56"
-                          />
-                        ) : (
-                          <span
-                            className="flex items-center gap-1 truncate font-medium"
-                            title={file.name}
-                          >
-                            <span className="truncate">{file.name}</span>
-                            {file.is_starred && (
-                              <Star className="h-4 w-4 flex-shrink-0 fill-amber-500 text-amber-500" />
-                            )}
-                          </span>
-                        )}
+                      <ExplorerFileName
+                        file={file}
+                        isRenaming={isRenaming(file.id)}
+                        renameInputProps={getRenameInputProps(file.id, "file")}
+                        textClassName="font-medium"
+                        inputClassName="h-7 w-56"
+                      />
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">

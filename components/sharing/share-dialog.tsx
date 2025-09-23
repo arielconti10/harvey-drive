@@ -16,6 +16,7 @@ import { Check, Copy, Link2, Loader2, Trash2 } from "lucide-react";
 import type { FileItem } from "@/lib/types";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface ShareDialogProps {
   files: FileItem[];
@@ -94,7 +95,9 @@ export function ShareDialog({ files, isOpen, onClose }: ShareDialogProps) {
         setShares(Array.isArray(data.shares) ? data.shares : []);
       }
     } catch (error) {
-      console.error("Failed to fetch shares", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to load existing share links.";
+      toast.error(message);
     } finally {
       setIsFetching(false);
       setDeletingId(null);
@@ -138,7 +141,9 @@ export function ShareDialog({ files, isOpen, onClose }: ShareDialogProps) {
       await fetchShares();
       invalidateSharedFiles();
     } catch (error) {
-      console.error(error);
+      const message =
+        error instanceof Error ? error.message : "Failed to create public link.";
+      toast.error(message);
     } finally {
       setLinkPending(false);
     }
@@ -160,7 +165,9 @@ export function ShareDialog({ files, isOpen, onClose }: ShareDialogProps) {
       await fetchShares();
       invalidateSharedFiles();
     } catch (error) {
-      console.error(error);
+      const message =
+        error instanceof Error ? error.message : "Failed to delete share link.";
+      toast.error(message);
     }
   };
 
@@ -171,7 +178,9 @@ export function ShareDialog({ files, isOpen, onClose }: ShareDialogProps) {
       setCopiedLink(publicShare?.share_token ?? null);
       setTimeout(() => setCopiedLink(null), 2000);
     } catch (error) {
-      console.error("Clipboard copy failed", error);
+      const message =
+        error instanceof Error ? error.message : "Clipboard access was denied.";
+      toast.error(message);
     }
   };
 

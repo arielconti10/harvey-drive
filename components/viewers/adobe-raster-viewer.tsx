@@ -85,7 +85,6 @@ export function AdobeRasterViewer({ file, onError }: AdobeRasterViewerProps) {
           if (error instanceof DOMException && error.name === "AbortError") {
             return;
           }
-          console.error("Failed to render PSD file", error);
           onError("Failed to render Adobe raster file");
         }
       } finally {

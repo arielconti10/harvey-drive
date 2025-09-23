@@ -17,16 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Folder, MoreVertical, ChevronDown, ChevronRight } from "lucide-react";
 import type { DashboardView, FileItem, FolderItem } from "@/lib/types";
-import { format } from "date-fns";
-import {
-  formatFileSize,
-  getFileIcon,
-  canPreview,
-} from "@/lib/utils/file-utils";
+import { getFileIcon, canPreview } from "@/lib/utils/file-utils";
 import { useUiStore } from "@/lib/store/ui";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import type { QueryClient } from "@tanstack/react-query";
@@ -53,6 +47,12 @@ import {
   useFileDragAndDrop,
 } from "./use-explorer-interactions";
 import { downloadFileWithFallback } from "./explorer-utils";
+import {
+  ExplorerFileMeta,
+  ExplorerFileName,
+  ExplorerFolderMeta,
+  ExplorerFolderName,
+} from "./explorer-item-labels";
 
 interface FolderPayload {
   kind: "folder";
@@ -500,6 +500,28 @@ function TreeRow({
     }
   }, [isFolder, folderId, fileData, canPreviewFile, onFolderNavigate, onFilePreview]);
 
+  const renameFieldProps = React.useMemo<React.ComponentProps<"input"> | undefined>(
+    () => {
+      if (!isRenaming || !renameInputProps) return undefined;
+      const original = renameInputProps as React.ComponentProps<"input">;
+
+      return {
+        ...original,
+        className: cn("h-7 text-sm", original.className),
+        onClick: (event: React.MouseEvent<HTMLInputElement>) => {
+          event.stopPropagation();
+          original.onClick?.(event);
+        },
+        onBlur: (event: React.FocusEvent<HTMLInputElement>) => {
+          original.onBlur?.(event);
+          event.stopPropagation();
+          onRenameInputBlur();
+        },
+      };
+    },
+    [isRenaming, renameInputProps, onRenameInputBlur]
+  );
+
   return (
     <div
       {...restItemProps}
@@ -558,37 +580,62 @@ function TreeRow({
         onDragStart={dragState.onDragStart}
         onDragEnd={dragState.onDragEnd}
       >
-        {isRenaming && renameInputProps ? (
-          <Input
-            {...(renameInputProps as React.ComponentProps<typeof Input>)}
-            onClick={(event) => event.stopPropagation()}
-            onBlur={(event) => {
-              renameInputProps?.onBlur?.(event);
-              event.stopPropagation();
-              onRenameInputBlur();
-            }}
-            className={cn("h-7 text-sm", renameInputProps.className)}
-          />
+        {isRenaming && renameFieldProps ? (
+          isFolder ? (
+            <ExplorerFolderName
+              folder={data as FolderPayload}
+              isRenaming
+              renameInputProps={renameFieldProps}
+              inputClassName="text-sm"
+            />
+          ) : fileData ? (
+            <ExplorerFileName
+              file={fileData}
+              isRenaming
+              renameInputProps={renameFieldProps}
+              showStar={false}
+              inputClassName="text-sm"
+            />
+          ) : null
         ) : (
           <button
             className="w-full text-left font-medium"
             onClick={handlePrimaryAction}
             type="button"
           >
-            {data.name}
+            {isFolder ? (
+              <ExplorerFolderName
+                folder={data as FolderPayload}
+                isRenaming={false}
+                textClassName="font-medium"
+              />
+            ) : fileData ? (
+              <ExplorerFileName
+                file={fileData}
+                isRenaming={false}
+                showStar={false}
+              />
+            ) : (
+              data.name
+            )}
           </button>
         )}
       </div>
 
-      <span className="text-xs">
-        {isFolder
-          ? data.created_at
-            ? format(new Date(data.created_at), "MMM d, yyyy")
-            : ""
-          : fileData?.size
-          ? formatFileSize(fileData.size)
-          : ""}
-      </span>
+      {isFolder ? (
+        <ExplorerFolderMeta
+          folder={data as FolderPayload}
+          className="text-xs"
+        />
+      ) : fileData ? (
+        <ExplorerFileMeta
+          file={fileData}
+          className="text-xs"
+          showDate={false}
+        />
+      ) : (
+        <span className="text-xs" />
+      )}
 
       {isRootFolder ? (
         <div className="w-6" />

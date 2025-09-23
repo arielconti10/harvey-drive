@@ -14,7 +14,7 @@ import { FileGridView } from "./file-grid-view";
 import { FileListView } from "./file-list-view";
 import { HtTreeView } from "./ht-tree-view";
 import { EmptyState } from "./empty-state";
-import { LoadingSpinner } from "../ui/loading-spinner";
+import { Spinner } from "@/components/ui/spinner";
 import { useDropzone } from "react-dropzone";
 
 interface FileExplorerProps {
@@ -161,8 +161,8 @@ export function FileExplorer({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner />
+      <div className="flex h-64 items-center justify-center">
+        <Spinner variant="circle" className="text-muted-foreground" />
       </div>
     );
   }

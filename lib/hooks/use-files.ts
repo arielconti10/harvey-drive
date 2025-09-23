@@ -10,6 +10,39 @@ import {
   fetchFoldersList,
 } from "@/lib/api/file-queries";
 
+async function getErrorMessage(response: Response, fallback: string) {
+  const message = fallback;
+  try {
+    const raw = await response.text();
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return message;
+    }
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "object" && parsed !== null) {
+        const candidate = parsed as Record<string, unknown>;
+        const error = candidate.error;
+        if (typeof error === "string" && error.trim()) {
+          return error.trim();
+        }
+        const msg = candidate.message;
+        if (typeof msg === "string" && msg.trim()) {
+          return msg.trim();
+        }
+      } else if (typeof parsed === "string" && parsed.trim()) {
+        return parsed.trim();
+      }
+    } catch {
+      // not JSON, fall through to trimmed text
+    }
+    return trimmed;
+  } catch {
+    // ignore read errors
+  }
+  return message;
+}
+
 interface UseFilesParams {
   folderId?: string | null;
   dataroomId?: string | null;
@@ -97,34 +130,8 @@ export function useFiles({
         if (response.status === 413) {
           throw new Error("File is too large. Maximum size is 50 MB.");
         }
-
-        let rawBody = "";
-        try {
-          rawBody = await response.text();
-        } catch {
-          // Ignore failure and fall back to generic message below
-        }
-
-        const contentType = response.headers.get("content-type") || "";
-        if (rawBody) {
-          if (contentType.includes("application/json")) {
-            try {
-              const parsed = JSON.parse(rawBody);
-              if (parsed?.error) {
-                throw new Error(parsed.error);
-              }
-            } catch {
-              // Body was not valid JSON; fall through to show raw text
-            }
-          }
-
-          const trimmed = rawBody.trim();
-          if (trimmed) {
-            throw new Error(trimmed);
-          }
-        }
-
-        throw new Error("Upload failed");
+        const message = await getErrorMessage(response, "Upload failed");
+        throw new Error(message);
       }
       return (await response.json()) as FileItem;
     },
@@ -147,8 +154,8 @@ export function useFiles({
         body: JSON.stringify({ fileId }),
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Delete failed");
+        const message = await getErrorMessage(response, "Delete failed");
+        throw new Error(message);
       }
       return fileId;
     },
@@ -170,8 +177,8 @@ export function useFiles({
         body: JSON.stringify({ fileId, name }),
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Rename failed");
+        const message = await getErrorMessage(response, "Rename failed");
+        throw new Error(message);
       }
       return (await response.json()) as FileItem;
     },
@@ -199,8 +206,8 @@ export function useFiles({
         body: JSON.stringify({ fileId, starred }),
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update star");
+        const message = await getErrorMessage(response, "Failed to update star");
+        throw new Error(message);
       }
       const payload = (await response.json()) as { file: FileItem };
       return payload.file;
@@ -210,10 +217,6 @@ export function useFiles({
         prev ? prev.map((f) => (f.id === updated.id ? updated : f)) : prev
       );
       queryClient.invalidateQueries({ queryKey: ["files"] });
-    },
-    onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : "Failed to update star";
-      console.error(message);
     },
   });
 
@@ -231,8 +234,8 @@ export function useFiles({
         body: JSON.stringify({ fileId, targetFolderId }),
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Move failed");
+        const message = await getErrorMessage(response, "Move failed");
+        throw new Error(message);
       }
       return (await response.json()) as FileItem;
     },
@@ -259,8 +262,8 @@ export function useFiles({
         body: JSON.stringify({ name, parentId, dataroomId }),
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create folder");
+        const message = await getErrorMessage(response, "Failed to create folder");
+        throw new Error(message);
       }
       return (await response.json()) as FolderItem;
     },
@@ -282,8 +285,8 @@ export function useFiles({
         body: JSON.stringify({ folderId }),
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Delete failed");
+        const message = await getErrorMessage(response, "Delete failed");
+        throw new Error(message);
       }
       return folderId;
     },
@@ -313,8 +316,8 @@ export function useFiles({
         body: JSON.stringify({ folderId, name }),
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Rename failed");
+        const message = await getErrorMessage(response, "Rename failed");
+        throw new Error(message);
       }
       return (await response.json()) as FolderItem;
     },
